@@ -43,6 +43,28 @@
         <button type="button" class="btn btn-secondary btn-sm" id="addPlayer">＋ Spieler hinzufügen</button>
     </fieldset>
 
+    <fieldset class="form-section" id="qwixxConfig" data-module="qwixx">
+        <legend>Qwixx-Variante</legend>
+        <label class="form-field">
+            <span>Block</span>
+            <select asp-for="QwixxVariant">
+                @foreach (var (key, name) in QwixxPad.Variants)
+                {
+                    <option value="@key">@name</option>
+                }
+            </select>
+        </label>
+        <p class="form-hint">Gemixxt-Blöcke werden für jedes Spiel neu ausgewürfelt – nach den Regeln der Erweiterung „Qwixx gemixxt".</p>
+    </fieldset>
+
+    <fieldset class="form-section" id="munchkinConfig" data-module="munchkin">
+        <legend>Munchkin-Einstellungen</legend>
+        <label class="form-check">
+            <input asp-for="MunchkinTrackHealth" type="checkbox" />
+            <span>Lebenspunkte mitzählen (Munchkin Quest – Start mit 4 Leben)</span>
+        </label>
+    </fieldset>
+
     <fieldset class="form-section" id="counterConfig" data-module="counter">
         <legend>Zähler-Einstellungen</legend>
         <div class="form-grid">
@@ -88,11 +110,15 @@
         // Abhängige Felder nur zeigen, wenn benötigt
         const moduleSelect = document.getElementById('moduleSelect');
         const counterConfig = document.getElementById('counterConfig');
+        const qwixxConfig = document.getElementById('qwixxConfig');
+        const munchkinConfig = document.getElementById('munchkinConfig');
         const hasTarget = document.getElementById('hasTarget');
         const targetField = document.getElementById('targetField');
 
         function syncVisibility() {
             counterConfig.style.display = moduleSelect.value === 'counter' ? '' : 'none';
+            qwixxConfig.style.display = moduleSelect.value === 'qwixx' ? '' : 'none';
+            munchkinConfig.style.display = moduleSelect.value === 'munchkin' ? '' : 'none';
             targetField.style.display = hasTarget.checked ? '' : 'none';
         }
         moduleSelect.addEventListener('change', syncVisibility);

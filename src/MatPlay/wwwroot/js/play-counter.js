@@ -13,11 +13,25 @@
         return map;
     }
 
-    function isWinner(state, total) {
-        const target = state.config.targetScore;
-        if (target === undefined || target === null) return false;
-        const start = state.config.startScore || 0;
-        return start > target ? total <= target : total >= target;
+    function winnerIds(state, totalMap) {
+        const cfg = state.config;
+        const target = cfg.targetScore;
+        if (target === undefined || target === null) return new Set();
+        const start = cfg.startScore || 0;
+        const entries = [...totalMap.entries()];
+
+        if (start > target) {
+            // Runterzählen (z.B. 20 Ab): Ziel erreicht = gewonnen
+            return new Set(entries.filter(([, t]) => t <= target).map(([id]) => id));
+        }
+        const ended = entries.some(([, t]) => t >= target);
+        if (!ended) return new Set();
+        if (cfg.lowestWins) {
+            // Limit erreicht = Spielende, wenigste Punkte gewinnen (z.B. Frantic)
+            const min = Math.min(...entries.map(([, t]) => t));
+            return new Set(entries.filter(([, t]) => t === min).map(([id]) => id));
+        }
+        return new Set(entries.filter(([, t]) => t >= target).map(([id]) => id));
     }
 
     function render(state) {
@@ -26,12 +40,12 @@
         const running = state.status === 0;
         const values = [...totalMap.values()];
         const best = cfg.lowestWins ? Math.min(...values) : Math.max(...values);
-        const anyWinner = [...totalMap.values()].some(t => isWinner(state, t));
+        const winners = winnerIds(state, totalMap);
 
         board.innerHTML = '';
         for (const player of state.players) {
             const total = totalMap.get(player.id);
-            const winner = isWinner(state, total);
+            const winner = winners.has(player.id);
             const leader = state.players.length > 1 && total === best && state.scores.length > 0;
 
             const card = document.createElement('div');
@@ -97,7 +111,6 @@
         }
 
         renderRounds(state);
-        void anyWinner;
     }
 
     function addScore(state, player, value, currentTotal) {

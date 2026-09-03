@@ -22,6 +22,12 @@ public class CreateModel(GameService games) : PageModel
     [BindProperty] public bool AllowNegative { get; set; } = true;
     [BindProperty] public bool UseRounds { get; set; }
 
+    // Qwixx-Konfiguration
+    [BindProperty] public string QwixxVariant { get; set; } = "classic";
+
+    // Munchkin-Konfiguration
+    [BindProperty] public bool MunchkinTrackHealth { get; set; }
+
     public string? Error { get; private set; }
 
     public void OnGet()
@@ -31,6 +37,13 @@ public class CreateModel(GameService games) : PageModel
 
         ModuleKey = preset.ModuleKey;
         Name = preset.Name;
+        if (preset.ModuleKey == "qwixx" && preset.ConfigJson.Contains("mixed"))
+            QwixxVariant = preset.ConfigJson.Contains("mixedColors") ? "mixedColors" : "mixedNumbers";
+        if (preset.ModuleKey == "munchkin")
+        {
+            var config = JsonSerializer.Deserialize<MunchkinConfig>(preset.ConfigJson, ModuleRegistry.JsonOpts)!;
+            MunchkinTrackHealth = config.TrackHealth;
+        }
         if (preset.ModuleKey == "counter")
         {
             var config = JsonSerializer.Deserialize<CounterConfig>(preset.ConfigJson, ModuleRegistry.JsonOpts)!;
@@ -63,8 +76,9 @@ public class CreateModel(GameService games) : PageModel
             return Page();
         }
 
-        var configJson = ModuleKey == "counter"
-            ? JsonSerializer.Serialize(new CounterConfig
+        var configJson = ModuleKey switch
+        {
+            "counter" => JsonSerializer.Serialize(new CounterConfig
             {
                 StartScore = StartScore,
                 Step = Step,
@@ -72,8 +86,11 @@ public class CreateModel(GameService games) : PageModel
                 LowestWins = LowestWins,
                 AllowNegative = AllowNegative,
                 UseRounds = UseRounds,
-            }, ModuleRegistry.JsonOpts)
-            : "{}";
+            }, ModuleRegistry.JsonOpts),
+            "qwixx" => JsonSerializer.Serialize(QwixxPad.Generate(QwixxVariant), ModuleRegistry.JsonOpts),
+            "munchkin" => JsonSerializer.Serialize(new MunchkinConfig { TrackHealth = MunchkinTrackHealth }, ModuleRegistry.JsonOpts),
+            _ => "{}",
+        };
 
         var game = await games.CreateAsync(Name.Trim(), ModuleKey, configJson, playerNames);
         return Redirect($"/play/{game.ShareToken}");

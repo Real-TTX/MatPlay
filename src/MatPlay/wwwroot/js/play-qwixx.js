@@ -1,16 +1,9 @@
-// ============ MatPlay – Modul: Qwixx ============
+// ============ MatPlay – Modul: Qwixx (klassisch + gemixxt-Varianten) ============
 
 (function () {
     const tabs = document.getElementById('qwixxTabs');
     const pad = document.getElementById('qwixxPad');
     const scoresTable = document.getElementById('qwixxScores');
-
-    const ROWS = [
-        { key: 'red', label: 'Rot', numbers: range(2, 12) },
-        { key: 'yellow', label: 'Gelb', numbers: range(2, 12) },
-        { key: 'green', label: 'Grün', numbers: range(12, 2) },
-        { key: 'blue', label: 'Blau', numbers: range(12, 2) },
-    ];
 
     let activePlayerId = null;
 
@@ -21,36 +14,50 @@
         return list;
     }
 
-    function playerState(player) {
+    function classicRows() {
+        return [
+            { key: 'red', color: 'red', cells: range(2, 12).map(n => ({ n, color: 'red' })) },
+            { key: 'yellow', color: 'yellow', cells: range(2, 12).map(n => ({ n, color: 'yellow' })) },
+            { key: 'green', color: 'green', cells: range(12, 2).map(n => ({ n, color: 'green' })) },
+            { key: 'blue', color: 'blue', cells: range(12, 2).map(n => ({ n, color: 'blue' })) },
+        ];
+    }
+
+    function gameRows(state) {
+        const rows = state.config && state.config.rows;
+        if (!rows || !rows.length) return classicRows();
+        return rows.map(r => ({ key: r.key, color: r.color || null, cells: r.cells }));
+    }
+
+    function playerState(rows, player) {
         const s = player.state || {};
-        return {
-            red: s.red || [], yellow: s.yellow || [],
-            green: s.green || [], blue: s.blue || [],
-            misses: s.misses || 0,
-        };
+        const result = { misses: s.misses || 0 };
+        for (const row of rows) result[row.key] = s[row.key] || [];
+        return result;
     }
 
     function rowScore(count) { return count * (count + 1) / 2; }
 
-    function totalScore(state) {
+    function totalScore(rows, ps) {
         let total = 0;
-        for (const row of ROWS) {
-            let crosses = state[row.key].length;
-            const last = row.numbers[row.numbers.length - 1];
-            if (state[row.key].includes(last)) crosses += 1; // Schloss zählt als Extra-Kreuz
+        for (const row of rows) {
+            let crosses = ps[row.key].length;
+            const last = row.cells[row.cells.length - 1].n;
+            if (ps[row.key].includes(last)) crosses += 1; // Schloss zählt als Extra-Kreuz
             total += rowScore(crosses);
         }
-        return total - state.misses * 5;
+        return total - ps.misses * 5;
     }
 
-    function lockedRows(gameState) {
-        return (gameState.config && gameState.config.lockedRows) || [];
+    function lockedRows(state) {
+        return (state.config && state.config.lockedRows) || [];
     }
 
     function render(state) {
         if (!state.players.length) { pad.innerHTML = '<p class="form-hint">Noch keine Spieler.</p>'; return; }
         if (!state.players.some(p => p.id === activePlayerId)) activePlayerId = state.players[0].id;
         const running = state.status === 0;
+        const rows = gameRows(state);
 
         // Spieler-Tabs
         tabs.innerHTML = '';
@@ -58,41 +65,42 @@
             const tab = document.createElement('button');
             tab.type = 'button';
             tab.className = 'tab' + (player.id === activePlayerId ? ' active' : '');
-            tab.textContent = `${player.name} · ${totalScore(playerState(player))}`;
+            tab.textContent = `${player.name} · ${totalScore(rows, playerState(rows, player))}`;
             tab.addEventListener('click', () => { activePlayerId = player.id; render(state); });
             tabs.appendChild(tab);
         }
 
         const player = state.players.find(p => p.id === activePlayerId);
-        const ps = playerState(player);
+        const ps = playerState(rows, player);
         const locked = lockedRows(state);
 
         pad.innerHTML = '';
-        for (const row of ROWS) {
+        for (const row of rows) {
             const rowEl = document.createElement('div');
-            rowEl.className = 'qwixx-row ' + row.key;
+            rowEl.className = 'qwixx-row ' + (row.color || 'mixed');
             const checked = ps[row.key];
             const rowLocked = locked.includes(row.key);
-            const last = row.numbers[row.numbers.length - 1];
+            const numbers = row.cells.map(c => c.n);
+            const last = numbers[numbers.length - 1];
 
-            row.numbers.forEach((num, idx) => {
+            row.cells.forEach((cellDef, idx) => {
                 const cell = document.createElement('button');
                 cell.type = 'button';
-                cell.className = 'qwixx-cell';
-                cell.textContent = num;
-                const isChecked = checked.includes(num);
+                cell.className = 'qwixx-cell c-' + cellDef.color;
+                cell.textContent = cellDef.n;
+                const isChecked = checked.includes(cellDef.n);
                 if (isChecked) cell.classList.add('checked');
 
-                const rightmostIdx = Math.max(-1, ...checked.map(n => row.numbers.indexOf(n)));
-                const isLast = num === last;
+                const rightmostIdx = Math.max(-1, ...checked.map(n => numbers.indexOf(n)));
+                const isLast = idx === numbers.length - 1;
                 const canCheck = running && !isChecked && idx > rightmostIdx &&
                     !rowLocked && (!isLast || checked.length >= 5);
                 const canUncheck = running && isChecked && idx === rightmostIdx;
 
                 if (!canCheck && !canUncheck) cell.classList.add('disabled');
                 cell.addEventListener('click', () => {
-                    if (canCheck) toggle(state, player, row, num, true);
-                    else if (canUncheck) toggle(state, player, row, num, false);
+                    if (canCheck) toggle(state, rows, player, row, cellDef.n, true);
+                    else if (canUncheck) toggle(state, rows, player, row, cellDef.n, false);
                 });
                 rowEl.appendChild(cell);
             });
@@ -116,7 +124,7 @@
         for (let i = 1; i <= 4; i++) {
             const box = document.createElement('button');
             box.type = 'button';
-            box.className = 'qwixx-cell' + (ps.misses >= i ? ' checked' : '');
+            box.className = 'qwixx-cell' + (ps.misses >= i ? ' checked miss' : '');
             box.textContent = ps.misses >= i ? '✖' : '';
             box.addEventListener('click', () => {
                 if (!running) return;
@@ -129,17 +137,18 @@
 
         const total = document.createElement('div');
         total.className = 'qwixx-total';
-        total.textContent = `Punkte: ${totalScore(ps)}`;
+        total.textContent = `Punkte: ${totalScore(rows, ps)}`;
         pad.appendChild(total);
 
-        renderScoreboard(state);
+        renderScoreboard(state, rows);
     }
 
-    async function toggle(state, player, row, num, check) {
-        const ps = playerState(player);
+    async function toggle(state, rows, player, row, num, check) {
+        const ps = playerState(rows, player);
         const list = ps[row.key];
         const next = { ...ps, [row.key]: check ? [...list, num] : list.filter(n => n !== num) };
-        const last = row.numbers[row.numbers.length - 1];
+        const numbers = row.cells.map(c => c.n);
+        const last = numbers[numbers.length - 1];
 
         await MatPlayCore.api('/player-state', { playerId: player.id, state: next });
 
@@ -153,12 +162,12 @@
         await MatPlayCore.refresh(true);
     }
 
-    function renderScoreboard(state) {
-        const rows = state.players
-            .map(p => ({ name: p.name, score: totalScore(playerState(p)) }))
+    function renderScoreboard(state, rows) {
+        const list = state.players
+            .map(p => ({ name: p.name, score: totalScore(rows, playerState(rows, p)) }))
             .sort((a, b) => b.score - a.score);
         let html = '<thead><tr><th>#</th><th>Spieler</th><th>Punkte</th></tr></thead><tbody>';
-        rows.forEach((r, i) => {
+        list.forEach((r, i) => {
             html += `<tr><td>${i === 0 ? '🏆' : i + 1}</td><td>${escapeHtml(r.name)}</td><td>${r.score}</td></tr>`;
         });
         scoresTable.innerHTML = html + '</tbody>';

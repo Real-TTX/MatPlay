@@ -69,6 +69,14 @@ using (var scope = app.Services.CreateScope())
         CREATE UNIQUE INDEX IF NOT EXISTS "IX_UserFavorite_UserId_PresetKey"
             ON "UserFavorite" ("UserId", "PresetKey");
         """);
+    try
+    {
+        db.Database.ExecuteSqlRaw("""ALTER TABLE "User" ADD COLUMN "MustChangePassword" INTEGER NOT NULL DEFAULT 0;""");
+    }
+    catch (Microsoft.Data.Sqlite.SqliteException)
+    {
+        // Spalte existiert bereits
+    }
     if (!db.Users.Any())
     {
         db.Users.Add(new User
@@ -77,6 +85,7 @@ using (var scope = app.Services.CreateScope())
             DisplayName = "Administrator",
             Role = Roles.Admin,
             PasswordHash = PasswordHasher.Hash("admin"),
+            MustChangePassword = true,
         });
         db.SaveChanges();
         app.Logger.LogWarning("Admin-Benutzer angelegt: admin / admin – Passwort bitte ändern!");
@@ -87,6 +96,23 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Erzwungene Passwort-Änderung (z.B. Erst-Login des Seed-Admins)
+app.Use(async (ctx, next) =>
+{
+    var current = ctx.RequestServices.GetRequiredService<CurrentContext>();
+    var path = ctx.Request.Path;
+    if (current.User?.MustChangePassword == true
+        && !path.StartsWithSegments("/account/change-password")
+        && !path.StartsWithSegments("/account/logout")
+        && !path.StartsWithSegments("/api"))
+    {
+        ctx.Response.Redirect("/account/change-password");
+        return;
+    }
+    await next();
+});
+
 app.MapRazorPages();
 
 // ---- Play-API (Zugriff über Share-Token = Link-Freigabe, auch anonym) ----

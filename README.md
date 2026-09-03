@@ -7,8 +7,11 @@ Als PWA installierbar, mit Wake-Lock („Display bleibt an") am Spieltisch.
 ## Features
 
 - 🎯 **Punktezähler** – generisch konfigurierbar (Startpunkte, Schrittweite, Ziel, Runden)
-- 🃏 **Presets** – z.B. „20 Ab" und „Phase 10 (Punkte)" als vorkonfigurierte Zähler
-- 🎲 **Qwixx** – digitaler Qwixx-Zettel mit Farbreihen, Schlössern und Fehlwürfen
+- 🃏 **Presets** – z.B. „20 Ab", „Phase 10 (Punkte)" und „Frantic" als vorkonfigurierte Zähler
+- 🎲 **Qwixx** – digitaler Zettel mit Farbreihen, Schlössern und Fehlwürfen;
+  inkl. „Qwixx gemixxt"-Varianten (wilde Zahlen / Farbsegmente), pro Spiel frisch ausgewürfelt
+- 🎰 **Kniffel** – kompletter Block (oberer/unterer Teil), Bonus wird automatisch gerechnet
+- ⚔️ **Munchkin & Munchkin Quest** – Level, Boni und Kampfkraft, optional mit Lebenspunkten
 - 🔗 **Link-Freigabe** – jedes Spiel hat einen Share-Link, alle Geräte synchronisieren live
 - 🔍 **Spielkatalog** – Startseite mit Suche und Paging, bereit für viele weitere Spiele (Flip 7 & Co.)
 - ⭐ **Favoriten** – angemeldete Benutzer markieren Lieblingsspiele, die zuerst erscheinen
@@ -28,7 +31,8 @@ docker compose -f docker-compose.dev.yml up -d --build
 
 - App: http://localhost:4664
 - DB-Admin (nur Dev): http://localhost:4665 – *sqlite-web statt pgAdmin, da SQLite als Datenbank dient*
-- Erster Login: **admin / admin** → Passwort danach unter Administration → Benutzer ändern!
+- Erster Login: **admin / admin** – beim ersten Login wird automatisch eine
+  Passwort-Änderung erzwungen, danach können weitere Konten angelegt werden.
 
 Alle Daten (SQLite-DB, JSON-Configs) liegen im Docker-Volume unter `/data` –
 Sessions und Spielstände überleben Container-Restarts.
@@ -47,7 +51,7 @@ docker compose -f docker-compose.dev.yml up -d --build
 |---|---|
 | Backend | C# / ASP.NET Core Razor Pages (.NET 10) |
 | Datenbank | SQLite (EF Core) – Logik; JSON – Configs |
-| Auth | Lokale Anmeldung, DB-Sessions (Token), später Microsoft Entra ID |
+| Auth | Lokale Anmeldung, DB-Sessions (Token) |
 | Deployment | Docker, docker-compose (dev/release), GitHub Actions → GHCR |
 
 ## Versionierung

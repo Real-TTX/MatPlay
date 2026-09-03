@@ -55,13 +55,26 @@
         </nav>
 
         <div class="sidebar-footer">
-            <div class="account-box">
-                <span class="account-avatar">@(string.IsNullOrEmpty(Current.User?.DisplayName) ? "👤" : Current.User!.DisplayName[..1].ToUpperInvariant())</span>
-                <div class="account-info">
-                    <span class="account-name">@(Current.User?.DisplayName ?? "Gast")</span>
-                    <span class="account-role">@(Current.User?.Role ?? "Anonym")</span>
+            @if (Current.IsAuthenticated)
+            {
+                <a class="account-box" href="/account/change-password" title="Passwort ändern">
+                    <span class="account-avatar">@Current.User!.DisplayName[..1].ToUpperInvariant()</span>
+                    <div class="account-info">
+                        <span class="account-name">@Current.User.DisplayName</span>
+                        <span class="account-role">@Current.User.Role</span>
+                    </div>
+                </a>
+            }
+            else
+            {
+                <div class="account-box">
+                    <span class="account-avatar">👤</span>
+                    <div class="account-info">
+                        <span class="account-name">Gast</span>
+                        <span class="account-role">Anonym</span>
+                    </div>
                 </div>
-            </div>
+            }
             <div class="footer-actions">
                 <div class="theme-switch" role="group" aria-label="Theme">
                     <button type="button" data-theme-choice="system" title="System">🖥️</button>
