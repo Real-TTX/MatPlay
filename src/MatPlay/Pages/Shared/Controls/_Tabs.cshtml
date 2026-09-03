@@ -1,0 +1,7 @@
+@model MatPlay.Pages.Shared.Controls.TabsModel
+<nav class="tab-bar" id="@Model.Id">
+    @foreach (var (key, label, url) in Model.Items)
+    {
+        <a class="tab @(key == Model.Active ? "active" : "")" href="@url">@label</a>
+    }
+</nav>

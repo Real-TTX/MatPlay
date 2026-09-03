@@ -1,0 +1,35 @@
+@page "/account/register"
+@model MatPlay.Pages.Account.RegisterModel
+@{
+    ViewData["Title"] = "Registrieren";
+    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Registrieren", null) };
+}
+
+<div class="auth-card">
+    @if (Model.Error != null)
+    {
+        <div class="alert alert-error">@Model.Error</div>
+    }
+    <form method="post" class="form">
+        <label class="form-field">
+            <span>Benutzername</span>
+            <input asp-for="Username" required minlength="3" maxlength="40" autocomplete="username" />
+        </label>
+        <label class="form-field">
+            <span>Anzeigename (optional)</span>
+            <input asp-for="DisplayName" maxlength="60" />
+        </label>
+        <label class="form-field">
+            <span>Passwort</span>
+            <input asp-for="Password" type="password" required minlength="6" autocomplete="new-password" />
+        </label>
+        <label class="form-field">
+            <span>Passwort wiederholen</span>
+            <input asp-for="PasswordRepeat" type="password" required autocomplete="new-password" />
+        </label>
+        <div class="action-bar">
+            <button type="submit" class="btn btn-primary">✨ Konto erstellen</button>
+            <a class="btn btn-secondary" href="/account/login">‹ Zurück</a>
+        </div>
+    </form>
+</div>

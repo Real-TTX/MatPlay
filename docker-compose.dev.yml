@@ -1,0 +1,32 @@
+# MatPlay – Dev-Stack (inkl. sqlite-web als DB-Admin, da SQLite statt PostgreSQL/pgAdmin)
+services:
+  matplay:
+    build:
+      context: .
+      args:
+        APP_VERSION: ${APP_VERSION:-local-dev}
+    image: matplay:dev
+    container_name: matplay-dev
+    ports:
+      - "4664:8080"
+    volumes:
+      - matplay-dev-data:/data
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    restart: unless-stopped
+
+  sqlite-web:
+    image: coleifer/sqlite-web
+    container_name: matplay-sqlite-web
+    ports:
+      - "4665:8080"
+    volumes:
+      - matplay-dev-data:/data
+    environment:
+      - SQLITE_DATABASE=db/matplay.db
+    depends_on:
+      - matplay
+    restart: unless-stopped
+
+volumes:
+  matplay-dev-data:

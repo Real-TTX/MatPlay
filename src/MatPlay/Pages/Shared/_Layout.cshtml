@@ -1,0 +1,117 @@
+@inject CurrentContext Current
+@inject AppInfo AppInfo
+@{
+    var title = ViewData["Title"] as string ?? "MatPlay";
+    var breadcrumb = ViewData["Breadcrumb"] as List<(string Text, string? Url)> ?? new();
+    var path = Context.Request.Path.Value ?? "/";
+    string NavClass(string prefix) =>
+        (prefix == "/" ? path == "/" : path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            ? "nav-item active" : "nav-item";
+}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>@title – MatPlay</title>
+    <meta name="theme-color" content="#0b0e1a" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <script>
+        // Theme vor dem ersten Paint setzen (System / Dark / Bright)
+        (function () {
+            var t = localStorage.getItem('matplay-theme') || 'system';
+            var dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+            document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+            document.documentElement.dataset.themeChoice = t;
+        })();
+    </script>
+    <link rel="stylesheet" href="/css/site.css" asp-append-version="true" />
+</head>
+<body>
+<div class="app">
+    <button class="menu-toggle" id="menuToggle" aria-label="Menü öffnen">
+        <span></span><span></span><span></span>
+    </button>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <a class="brand" href="/">
+            <img src="/icons/favicon.svg" alt="" class="brand-logo" />
+            <span class="brand-name">Mat<em>Play</em></span>
+        </a>
+
+        <nav class="nav">
+            <a class="@NavClass("/")" href="/"><span class="nav-icon">🚀</span> Start</a>
+            <a class="@NavClass("/games")" href="/games"><span class="nav-icon">🎮</span> Meine Spiele</a>
+            @if (Current.IsAdmin)
+            {
+                <div class="nav-section">Administration</div>
+                <a class="@NavClass("/admin/users")" href="/admin/users"><span class="nav-icon">👥</span> Benutzer</a>
+            }
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="account-box">
+                <span class="account-avatar">@(string.IsNullOrEmpty(Current.User?.DisplayName) ? "👤" : Current.User!.DisplayName[..1].ToUpperInvariant())</span>
+                <div class="account-info">
+                    <span class="account-name">@(Current.User?.DisplayName ?? "Gast")</span>
+                    <span class="account-role">@(Current.User?.Role ?? "Anonym")</span>
+                </div>
+            </div>
+            <div class="footer-actions">
+                <div class="theme-switch" role="group" aria-label="Theme">
+                    <button type="button" data-theme-choice="system" title="System">🖥️</button>
+                    <button type="button" data-theme-choice="light" title="Hell">☀️</button>
+                    <button type="button" data-theme-choice="dark" title="Dunkel">🌙</button>
+                </div>
+                @if (Current.IsAuthenticated)
+                {
+                    <form method="post" action="/account/logout" class="logout-form">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-ghost btn-sm" title="Abmelden">⎋ Logout</button>
+                    </form>
+                }
+                else
+                {
+                    <a href="/account/login" class="btn btn-ghost btn-sm">🔑 Login</a>
+                }
+            </div>
+            <div class="version">@AppInfo.Version</div>
+        </div>
+    </aside>
+
+    <main class="content">
+        <header class="content-header">
+            <h1>@title</h1>
+            @if (breadcrumb.Count > 0)
+            {
+                <nav class="breadcrumb" aria-label="Breadcrumb">
+                    <a href="/">Start</a>
+                    @foreach (var (text, url) in breadcrumb)
+                    {
+                        <span class="crumb-sep">/</span>
+                        @if (url != null)
+                        {
+                            <a href="@url">@text</a>
+                        }
+                        else
+                        {
+                            <span class="crumb-current">@text</span>
+                        }
+                    }
+                </nav>
+            }
+        </header>
+        <div class="content-body">
+            @RenderBody()
+        </div>
+    </main>
+</div>
+<script src="/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

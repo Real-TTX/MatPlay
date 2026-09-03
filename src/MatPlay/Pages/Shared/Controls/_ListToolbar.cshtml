@@ -1,0 +1,37 @@
+@model MatPlay.Pages.Shared.Controls.ListToolbarModel
+<form method="get" action="@Model.Action" class="list-toolbar" id="@Model.Id">
+    @foreach (var (key, value) in Model.Hidden)
+    {
+        <input type="hidden" name="@key" value="@value" />
+    }
+    <div class="toolbar-search">
+        <span class="toolbar-search-icon">🔍</span>
+        <input type="search" name="q" value="@Model.Search" placeholder="@Model.SearchPlaceholder"
+               aria-label="Suchtext" />
+    </div>
+    @foreach (var filter in Model.Filters)
+    {
+        <label class="toolbar-filter">
+            <span>@filter.Label</span>
+            <select name="@filter.Name" onchange="this.form.submit()">
+                @foreach (var (value, text) in filter.Options)
+                {
+                    <option value="@value" selected="@(value == filter.Selected)">@text</option>
+                }
+            </select>
+        </label>
+    }
+    @if (Model.SortOptions.Count > 0)
+    {
+        <label class="toolbar-filter">
+            <span>Sortierung</span>
+            <select name="sort" onchange="this.form.submit()">
+                @foreach (var (value, text) in Model.SortOptions)
+                {
+                    <option value="@value" selected="@(value == Model.Sort)">@text</option>
+                }
+            </select>
+        </label>
+    }
+    <button type="submit" class="btn btn-secondary btn-sm">Anwenden</button>
+</form>

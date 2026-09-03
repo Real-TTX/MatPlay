@@ -1,0 +1,87 @@
+@page "/"
+@model IndexModel
+@using MatPlay.Pages.Shared.Controls
+@{
+    ViewData["Title"] = "Start";
+}
+
+<section class="hero">
+    <h2 class="hero-title">Spiel starten. <span class="neon">Punkte zählen.</span> Gewinnen.</h2>
+    <p class="hero-sub">Wähle ein Spiel – ohne Anmeldung, direkt loslegen. Link teilen und alle zählen mit.</p>
+</section>
+
+<partial name="Controls/_ListToolbar" model="@(new ListToolbarModel
+{
+    Id = "catalogToolbar",
+    Action = "/",
+    Search = Model.Q,
+    SearchPlaceholder = "Spiel suchen (z.B. Qwixx, 20 Ab) …",
+    Filters = Model.CanFavorite
+        ? [new ToolbarFilter
+        {
+            Name = "fav", Label = "Anzeigen", Selected = Model.Fav,
+            Options = [("", "Alle Spiele"), ("1", "⭐ Nur Favoriten")],
+        }]
+        : [],
+})" />
+
+@if (Model.Presets.Count == 0)
+{
+    <p class="table-empty">Kein Spiel gefunden – probier einen anderen Suchbegriff. 🔍</p>
+}
+
+<section class="preset-grid">
+    @foreach (var preset in Model.Presets)
+    {
+        var isFavorite = Model.FavoriteKeys.Contains(preset.Key);
+        <div class="preset-card accent-@preset.Accent">
+            @if (Model.CanFavorite)
+            {
+                <form method="post" asp-page-handler="toggleFavorite" class="fav-form">
+                    <input type="hidden" name="presetKey" value="@preset.Key" />
+                    <input type="hidden" name="q" value="@Model.Q" />
+                    <input type="hidden" name="fav" value="@Model.Fav" />
+                    <input type="hidden" name="p" value="@Model.P" />
+                    <button type="submit" class="fav-btn @(isFavorite ? "active" : "")"
+                            title="@(isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen")">
+                        @(isFavorite ? "★" : "☆")
+                    </button>
+                </form>
+            }
+            <a class="preset-link" href="/games/create?preset=@preset.Key">
+                <span class="preset-icon">@preset.Icon</span>
+                <span class="preset-name">@preset.Name</span>
+                <span class="preset-desc">@preset.Description</span>
+                <span class="preset-cta">Starten ›</span>
+            </a>
+        </div>
+    }
+</section>
+
+<partial name="Controls/_Pagination" model="@(new PaginationModel
+{
+    Id = "catalogPagination",
+    Page = Model.P,
+    TotalPages = Model.TotalPages,
+    UrlFor = Model.UrlForPage,
+})" />
+
+@if (Model.RecentGames.Count > 0)
+{
+    <section class="recent">
+        <h3>Zuletzt gespielt</h3>
+        <div class="recent-list">
+            @foreach (var game in Model.RecentGames)
+            {
+                var module = ModuleRegistry.GetModule(game.ModuleKey);
+                <a class="recent-item" href="/play/@game.ShareToken">
+                    <span class="recent-icon">@(module?.Icon ?? "🎮")</span>
+                    <span class="recent-name">@game.Name</span>
+                    <span class="badge @(game.Status == GameStatus.Running ? "badge-live" : "badge-done")">
+                        @(game.Status == GameStatus.Running ? "Läuft" : "Beendet")
+                    </span>
+                </a>
+            }
+        </div>
+    </section>
+}

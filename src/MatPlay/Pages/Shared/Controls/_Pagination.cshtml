@@ -1,0 +1,25 @@
+@model MatPlay.Pages.Shared.Controls.PaginationModel
+@if (Model.TotalPages > 1)
+{
+    <nav class="pagination" id="@Model.Id" aria-label="Seiten">
+        <a class="page-btn @(Model.Page <= 1 ? "disabled" : "")"
+           href="@(Model.Page <= 1 ? "#" : Model.UrlFor(Model.Page - 1))">‹</a>
+        @for (var i = 1; i <= Model.TotalPages; i++)
+        {
+            if (i == Model.Page)
+            {
+                <span class="page-btn current">@i</span>
+            }
+            else if (i == 1 || i == Model.TotalPages || Math.Abs(i - Model.Page) <= 2)
+            {
+                <a class="page-btn" href="@Model.UrlFor(i)">@i</a>
+            }
+            else if (Math.Abs(i - Model.Page) == 3)
+            {
+                <span class="page-ellipsis">…</span>
+            }
+        }
+        <a class="page-btn @(Model.Page >= Model.TotalPages ? "disabled" : "")"
+           href="@(Model.Page >= Model.TotalPages ? "#" : Model.UrlFor(Model.Page + 1))">›</a>
+    </nav>
+}

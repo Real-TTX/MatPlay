@@ -1,0 +1,94 @@
+@page "/games"
+@model MatPlay.Pages.Games.IndexModel
+@using MatPlay.Pages.Shared.Controls
+@{
+    ViewData["Title"] = "Meine Spiele";
+    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Meine Spiele", null) };
+}
+
+<partial name="Controls/_ListToolbar" model="@(new ListToolbarModel
+{
+    Id = "gamesToolbar",
+    Action = "/games",
+    Search = Model.Q,
+    SearchPlaceholder = "Spiel suchen …",
+    Filters =
+    [
+        new ToolbarFilter
+        {
+            Name = "module", Label = "Modul", Selected = Model.Module,
+            Options = new List<(string, string)> { ("", "Alle") }
+                .Concat(ModuleRegistry.Modules.Select(m => (m.Key, m.Name))).ToList(),
+        },
+        new ToolbarFilter
+        {
+            Name = "status", Label = "Status", Selected = Model.Status,
+            Options = [("", "Alle"), ("0", "Läuft"), ("1", "Beendet")],
+        },
+    ],
+    SortOptions = [("", "Zuletzt aktiv"), ("name", "Name"), ("created", "Erstellt")],
+    Sort = Model.Sort,
+})" />
+
+<form method="post" asp-page-handler="delete">
+    <input type="hidden" name="q" value="@Model.Q" />
+    <input type="hidden" name="module" value="@Model.Module" />
+    <input type="hidden" name="status" value="@Model.Status" />
+    <input type="hidden" name="sort" value="@Model.Sort" />
+    <input type="hidden" name="p" value="@Model.P" />
+
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+            <tr>
+                <th class="col-check"></th>
+                <th>Spiel</th>
+                <th>Modul</th>
+                <th>Status</th>
+                <th class="col-hide-mobile">Zuletzt aktiv</th>
+                <th class="col-actions"></th>
+            </tr>
+            </thead>
+            <tbody>
+            @if (Model.Items.Count == 0)
+            {
+                <tr><td colspan="6" class="table-empty">Noch keine Spiele – starte eins über die Start-Seite! 🚀</td></tr>
+            }
+            @foreach (var game in Model.Items)
+            {
+                var module = ModuleRegistry.GetModule(game.ModuleKey);
+                <tr>
+                    <td class="col-check"><input type="checkbox" name="selected" value="@game.Id" aria-label="@game.Name auswählen" /></td>
+                    <td><a class="table-link" href="/play/@game.ShareToken">@(module?.Icon ?? "🎮") @game.Name</a></td>
+                    <td>@(module?.Name ?? game.ModuleKey)</td>
+                    <td>
+                        <span class="badge @(game.Status == GameStatus.Running ? "badge-live" : "badge-done")">
+                            @(game.Status == GameStatus.Running ? "Läuft" : "Beendet")
+                        </span>
+                    </td>
+                    <td class="col-hide-mobile">@game.UpdateDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                    <td class="col-actions">
+                        <a class="icon-btn" href="/play/@game.ShareToken" title="Spielen">▶️</a>
+                        <a class="icon-btn" href="/games/edit/@game.Id" title="Bearbeiten">✏️</a>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <partial name="Controls/_Pagination" model="@(new PaginationModel
+    {
+        Id = "gamesPagination",
+        Page = Model.P,
+        TotalPages = Model.TotalPages,
+        UrlFor = Model.UrlForPage,
+    })" />
+
+    <div class="action-bar">
+        <a class="btn btn-primary" href="/games/create">＋ Neues Spiel</a>
+        <span class="action-gap"></span>
+        <button type="submit" class="btn btn-danger"
+                onclick="return confirm('Ausgewählte Spiele wirklich löschen?')">🗑 Löschen</button>
+    </div>
+</form>

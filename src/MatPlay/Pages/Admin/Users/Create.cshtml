@@ -1,0 +1,39 @@
+@page "/admin/users/create"
+@model MatPlay.Pages.Admin.Users.CreateModel
+@{
+    ViewData["Title"] = "Neuer Benutzer";
+    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Administration", null), ("Benutzer", "/admin/users"), ("Neu", null) };
+}
+
+@if (Model.Error != null)
+{
+    <div class="alert alert-error">@Model.Error</div>
+}
+
+<form method="post" class="form">
+    <div class="form-grid">
+        <label class="form-field">
+            <span>Benutzername</span>
+            <input asp-for="Username" required minlength="3" maxlength="40" />
+        </label>
+        <label class="form-field">
+            <span>Anzeigename</span>
+            <input asp-for="DisplayName" maxlength="60" />
+        </label>
+        <label class="form-field">
+            <span>Passwort</span>
+            <input asp-for="Password" type="password" required minlength="6" autocomplete="new-password" />
+        </label>
+        <label class="form-field">
+            <span>Rolle</span>
+            <select asp-for="Role">
+                <option value="@Roles.User">User</option>
+                <option value="@Roles.Admin">Admin</option>
+            </select>
+        </label>
+    </div>
+    <div class="action-bar">
+        <button type="submit" class="btn btn-primary">💾 Speichern</button>
+        <a class="btn btn-secondary" href="/admin/users">‹ Zurück</a>
+    </div>
+</form>

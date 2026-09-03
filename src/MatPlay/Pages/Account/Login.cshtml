@@ -1,0 +1,32 @@
+@page "/account/login"
+@model MatPlay.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "Anmelden";
+    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Anmelden", null) };
+}
+
+<div class="auth-card">
+    @if (Model.Error != null)
+    {
+        <div class="alert alert-error">@Model.Error</div>
+    }
+    <form method="post" class="form">
+        <input type="hidden" asp-for="ReturnUrl" />
+        <label class="form-field">
+            <span>Benutzername</span>
+            <input asp-for="Username" required autofocus autocomplete="username" />
+        </label>
+        <label class="form-field">
+            <span>Passwort</span>
+            <input asp-for="Password" type="password" required autocomplete="current-password" />
+        </label>
+        <div class="action-bar">
+            <button type="submit" class="btn btn-primary">🔑 Anmelden</button>
+            @if (Model.AllowRegistration)
+            {
+                <a class="btn btn-secondary" href="/account/register">Registrieren</a>
+            }
+        </div>
+    </form>
+    <p class="form-hint">Ohne Konto? Du kannst Spiele auch als Gast erstellen und teilen. 🎲</p>
+</div>

@@ -1,0 +1,29 @@
+@page "/play/{token}"
+@model MatPlay.Pages.Play.IndexModel
+@{
+    ViewData["Title"] = Model.Game!.Name;
+    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Meine Spiele", "/games"), (Model.Game.Name, null) };
+}
+
+<div class="play-toolbar">
+    <span class="badge badge-module accent-@Model.Module!.Accent">@Model.Module.Icon @Model.Module.Name</span>
+    <span class="badge" id="statusBadge"></span>
+    <span class="play-toolbar-spacer"></span>
+    <button type="button" class="btn btn-secondary btn-sm" id="shareBtn" title="Link teilen">🔗 Teilen</button>
+    <button type="button" class="btn btn-secondary btn-sm" id="wakeLockBtn" title="Bildschirm anlassen">📱 Display an</button>
+    @if (Model.IsOwner)
+    {
+        <a class="btn btn-secondary btn-sm" href="/games/edit/@Model.Game.Id" title="Bearbeiten">✏️</a>
+    }
+</div>
+
+<div id="playRoot"
+     data-token="@Model.Game.ShareToken"
+     data-module="@Model.Game.ModuleKey">
+    <partial name="@Model.Module.PlayPartial" />
+</div>
+
+@section Scripts {
+    <script src="/js/play-core.js" asp-append-version="true"></script>
+    <script src="/js/play-@(Model.Game.ModuleKey).js" asp-append-version="true"></script>
+}

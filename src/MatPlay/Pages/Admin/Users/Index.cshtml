@@ -1,0 +1,77 @@
+@page "/admin/users"
+@model MatPlay.Pages.Admin.Users.IndexModel
+@using MatPlay.Pages.Shared.Controls
+@{
+    ViewData["Title"] = "Benutzer";
+    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Administration", null), ("Benutzer", null) };
+}
+
+<partial name="Controls/_ListToolbar" model="@(new ListToolbarModel
+{
+    Id = "usersToolbar",
+    Action = "/admin/users",
+    Search = Model.Q,
+    SearchPlaceholder = "Benutzer suchen …",
+    Filters =
+    [
+        new ToolbarFilter
+        {
+            Name = "role", Label = "Rolle", Selected = Model.Role,
+            Options = [("", "Alle"), (Roles.Admin, "Admin"), (Roles.User, "User")],
+        },
+    ],
+    SortOptions = [("", "Benutzername"), ("created", "Erstellt")],
+    Sort = Model.Sort,
+})" />
+
+<form method="post" asp-page-handler="delete">
+    <input type="hidden" name="q" value="@Model.Q" />
+    <input type="hidden" name="role" value="@Model.Role" />
+    <input type="hidden" name="sort" value="@Model.Sort" />
+    <input type="hidden" name="p" value="@Model.P" />
+
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+            <tr>
+                <th class="col-check"></th>
+                <th>Benutzername</th>
+                <th>Anzeigename</th>
+                <th>Rolle</th>
+                <th class="col-hide-mobile">Erstellt</th>
+                <th class="col-actions"></th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var user in Model.Items)
+            {
+                <tr>
+                    <td class="col-check"><input type="checkbox" name="selected" value="@user.Id" aria-label="@user.Username auswählen" /></td>
+                    <td><a class="table-link" href="/admin/users/edit/@user.Id">@user.Username</a></td>
+                    <td>@user.DisplayName</td>
+                    <td><span class="badge @(user.Role == Roles.Admin ? "badge-admin" : "badge-user")">@user.Role</span></td>
+                    <td class="col-hide-mobile">@user.CreateDate.ToLocalTime().ToString("dd.MM.yyyy")</td>
+                    <td class="col-actions">
+                        <a class="icon-btn" href="/admin/users/edit/@user.Id" title="Bearbeiten">✏️</a>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <partial name="Controls/_Pagination" model="@(new PaginationModel
+    {
+        Id = "usersPagination",
+        Page = Model.P,
+        TotalPages = Model.TotalPages,
+        UrlFor = Model.UrlForPage,
+    })" />
+
+    <div class="action-bar">
+        <a class="btn btn-primary" href="/admin/users/create">＋ Neuer Benutzer</a>
+        <span class="action-gap"></span>
+        <button type="submit" class="btn btn-danger"
+                onclick="return confirm('Ausgewählte Benutzer wirklich löschen?')">🗑 Löschen</button>
+    </div>
+</form>

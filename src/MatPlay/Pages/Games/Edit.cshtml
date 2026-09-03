@@ -1,0 +1,107 @@
+@page "/games/edit/{id:long}"
+@model MatPlay.Pages.Games.EditModel
+@{
+    ViewData["Title"] = "Spiel bearbeiten";
+    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Meine Spiele", "/games"), (Model.Game?.Name ?? "Bearbeiten", null) };
+    var shareUrl = $"{Request.Scheme}://{Request.Host}/play/{Model.Game?.ShareToken}";
+}
+
+@if (Model.Error != null)
+{
+    <div class="alert alert-error">@Model.Error</div>
+}
+
+<div class="share-box">
+    <span class="share-label">🔗 Freigabe-Link (alle mit Link können mitspielen):</span>
+    <div class="share-row">
+        <input type="text" readonly value="@shareUrl" id="shareUrl" onclick="this.select()" />
+        <button type="button" class="btn btn-secondary btn-sm" data-copy="#shareUrl">📋 Kopieren</button>
+    </div>
+</div>
+
+<form method="post" class="form">
+    <div class="form-grid">
+        <label class="form-field">
+            <span>Name des Spiels</span>
+            <input asp-for="Name" required maxlength="80" />
+        </label>
+        <label class="form-field">
+            <span>Status</span>
+            <select asp-for="Status">
+                <option value="0">Läuft</option>
+                <option value="1">Beendet</option>
+            </select>
+        </label>
+    </div>
+
+    <fieldset class="form-section">
+        <legend>Spieler</legend>
+        <p class="form-hint">Name leeren, um einen Spieler zu entfernen. Neue Spieler können direkt im Spiel hinzugefügt werden.</p>
+        <div class="player-list">
+            @for (var i = 0; i < Model.Players.Count; i++)
+            {
+                <div class="player-row">
+                    <input type="hidden" name="PlayerIds" value="@Model.Players[i].Id" />
+                    <input type="text" name="PlayerNames" value="@Model.Players[i].Name" maxlength="40" />
+                </div>
+            }
+        </div>
+    </fieldset>
+
+    @if (Model.Game?.ModuleKey == "counter")
+    {
+        <fieldset class="form-section">
+            <legend>Zähler-Einstellungen</legend>
+            <div class="form-grid">
+                <label class="form-field">
+                    <span>Startpunkte</span>
+                    <input asp-for="StartScore" type="number" />
+                </label>
+                <label class="form-field">
+                    <span>Schrittweite (+/−)</span>
+                    <input asp-for="Step" type="number" min="1" />
+                </label>
+            </div>
+            <label class="form-check">
+                <input asp-for="HasTarget" type="checkbox" id="hasTarget" />
+                <span>Zielpunktzahl festlegen</span>
+            </label>
+            <label class="form-field indent" id="targetField">
+                <span>Zielpunktzahl</span>
+                <input asp-for="TargetScore" type="number" />
+            </label>
+            <label class="form-check">
+                <input asp-for="LowestWins" type="checkbox" />
+                <span>Wenigste Punkte gewinnen</span>
+            </label>
+            <label class="form-check">
+                <input asp-for="AllowNegative" type="checkbox" />
+                <span>Negative Punkte erlauben</span>
+            </label>
+            <label class="form-check">
+                <input asp-for="UseRounds" type="checkbox" />
+                <span>In Runden zählen</span>
+            </label>
+        </fieldset>
+    }
+
+    <div class="action-bar">
+        <button type="submit" class="btn btn-primary">💾 Speichern</button>
+        <a class="btn btn-secondary" href="/games">‹ Zurück</a>
+        <span class="action-gap"></span>
+        <button type="submit" asp-page-handler="delete" class="btn btn-danger"
+                onclick="return confirm('Dieses Spiel wirklich löschen?')">🗑 Löschen</button>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        const hasTarget = document.getElementById('hasTarget');
+        const targetField = document.getElementById('targetField');
+        if (hasTarget && targetField) {
+            const sync = () => targetField.style.display = hasTarget.checked ? '' : 'none';
+            hasTarget.addEventListener('change', sync);
+            sync();
+        }
+    </script>
+}

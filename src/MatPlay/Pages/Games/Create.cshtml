@@ -1,0 +1,116 @@
+@page "/games/create"
+@model MatPlay.Pages.Games.CreateModel
+@{
+    ViewData["Title"] = "Neues Spiel";
+    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Meine Spiele", "/games"), ("Neues Spiel", null) };
+}
+
+@if (Model.Error != null)
+{
+    <div class="alert alert-error">@Model.Error</div>
+}
+
+<form method="post" class="form" id="createForm">
+    <div class="form-grid">
+        <label class="form-field">
+            <span>Name des Spiels</span>
+            <input asp-for="Name" placeholder="z.B. Spieleabend bei Max" required maxlength="80" />
+        </label>
+
+        <label class="form-field">
+            <span>Spielmodul</span>
+            <select asp-for="ModuleKey" id="moduleSelect">
+                @foreach (var module in ModuleRegistry.Modules)
+                {
+                    <option value="@module.Key">@module.Icon @module.Name</option>
+                }
+            </select>
+        </label>
+    </div>
+
+    <fieldset class="form-section">
+        <legend>Spieler</legend>
+        <div id="playerList" class="player-list">
+            @{ var players = Model.Players.Count > 0 ? Model.Players : new List<string> { "", "" }; }
+            @foreach (var player in players)
+            {
+                <div class="player-row">
+                    <input type="text" name="Players" value="@player" placeholder="Spielername" maxlength="40" />
+                    <button type="button" class="icon-btn remove-player" title="Entfernen">✖</button>
+                </div>
+            }
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="addPlayer">＋ Spieler hinzufügen</button>
+    </fieldset>
+
+    <fieldset class="form-section" id="counterConfig" data-module="counter">
+        <legend>Zähler-Einstellungen</legend>
+        <div class="form-grid">
+            <label class="form-field">
+                <span>Startpunkte</span>
+                <input asp-for="StartScore" type="number" />
+            </label>
+            <label class="form-field">
+                <span>Schrittweite (+/−)</span>
+                <input asp-for="Step" type="number" min="1" />
+            </label>
+        </div>
+        <label class="form-check">
+            <input asp-for="HasTarget" type="checkbox" id="hasTarget" />
+            <span>Zielpunktzahl festlegen</span>
+        </label>
+        <label class="form-field indent" id="targetField">
+            <span>Zielpunktzahl</span>
+            <input asp-for="TargetScore" type="number" />
+        </label>
+        <label class="form-check">
+            <input asp-for="LowestWins" type="checkbox" />
+            <span>Wenigste Punkte gewinnen</span>
+        </label>
+        <label class="form-check">
+            <input asp-for="AllowNegative" type="checkbox" />
+            <span>Negative Punkte erlauben</span>
+        </label>
+        <label class="form-check">
+            <input asp-for="UseRounds" type="checkbox" />
+            <span>In Runden zählen</span>
+        </label>
+    </fieldset>
+
+    <div class="action-bar">
+        <button type="submit" class="btn btn-primary">💾 Spiel starten</button>
+        <a class="btn btn-secondary" href="/games">‹ Zurück</a>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        // Abhängige Felder nur zeigen, wenn benötigt
+        const moduleSelect = document.getElementById('moduleSelect');
+        const counterConfig = document.getElementById('counterConfig');
+        const hasTarget = document.getElementById('hasTarget');
+        const targetField = document.getElementById('targetField');
+
+        function syncVisibility() {
+            counterConfig.style.display = moduleSelect.value === 'counter' ? '' : 'none';
+            targetField.style.display = hasTarget.checked ? '' : 'none';
+        }
+        moduleSelect.addEventListener('change', syncVisibility);
+        hasTarget.addEventListener('change', syncVisibility);
+        syncVisibility();
+
+        // Spielerliste
+        const playerList = document.getElementById('playerList');
+        document.getElementById('addPlayer').addEventListener('click', () => {
+            const row = document.createElement('div');
+            row.className = 'player-row';
+            row.innerHTML = '<input type="text" name="Players" placeholder="Spielername" maxlength="40" />' +
+                '<button type="button" class="icon-btn remove-player" title="Entfernen">✖</button>';
+            playerList.appendChild(row);
+            row.querySelector('input').focus();
+        });
+        playerList.addEventListener('click', e => {
+            if (e.target.closest('.remove-player')) e.target.closest('.player-row').remove();
+        });
+    </script>
+}

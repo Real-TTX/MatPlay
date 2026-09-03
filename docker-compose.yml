@@ -1,0 +1,17 @@
+# MatPlay – Release-Stack
+services:
+  matplay:
+    build:
+      context: .
+      args:
+        APP_VERSION: ${APP_VERSION:-local}
+    image: matplay:${APP_VERSION:-local}
+    container_name: matplay
+    ports:
+      - "4664:8080"
+    volumes:
+      - matplay-data:/data
+    restart: unless-stopped
+
+volumes:
+  matplay-data:
