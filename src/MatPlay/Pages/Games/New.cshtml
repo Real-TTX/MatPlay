@@ -1,0 +1,72 @@
+@page "/games/new"
+@model MatPlay.Pages.Games.NewModel
+@using MatPlay.Pages.Shared.Controls
+@{
+    ViewData["Title"] = "Neues Spiel";
+    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Meine Spiele", "/games"), ("Neues Spiel", null) };
+}
+
+<section class="hero">
+    <h2 class="hero-title">Spiel starten. <span class="neon">Punkte zählen.</span> Gewinnen.</h2>
+    <p class="hero-sub">Wähle eine Spielart – ohne Anmeldung, direkt loslegen. Link teilen und alle zählen mit.</p>
+</section>
+
+<partial name="Controls/_ListToolbar" model="@(new ListToolbarModel
+{
+    Id = "catalogToolbar",
+    Action = "/games/new",
+    Search = Model.Q,
+    SearchPlaceholder = "Spielart suchen (z.B. Qwixx, Frantic) …",
+    Filters = Model.CanFavorite
+        ? [new ToolbarFilter
+        {
+            Name = "fav", Label = "Anzeigen", Selected = Model.Fav,
+            Options = [("", "Alle Spielarten"), ("1", "⭐ Nur Favoriten")],
+        }]
+        : [],
+})" />
+
+@if (Model.Presets.Count == 0)
+{
+    <p class="table-empty">Keine Spielart gefunden – probier einen anderen Suchbegriff. 🔍</p>
+}
+
+<section class="preset-grid">
+    @foreach (var preset in Model.Presets)
+    {
+        var isFavorite = Model.FavoriteKeys.Contains(preset.Key);
+        <div class="preset-card accent-@preset.Accent">
+            @if (Model.CanFavorite)
+            {
+                <form method="post" asp-page-handler="toggleFavorite" class="fav-form">
+                    <input type="hidden" name="presetKey" value="@preset.Key" />
+                    <input type="hidden" name="q" value="@Model.Q" />
+                    <input type="hidden" name="fav" value="@Model.Fav" />
+                    <input type="hidden" name="p" value="@Model.P" />
+                    <button type="submit" class="fav-btn @(isFavorite ? "active" : "")"
+                            title="@(isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen")">
+                        @(isFavorite ? "★" : "☆")
+                    </button>
+                </form>
+            }
+            <a class="preset-link" href="/games/create?preset=@preset.Key">
+                <span class="preset-icon">@preset.Icon</span>
+                <span class="preset-name">@preset.Name</span>
+                <span class="preset-desc">@preset.Description</span>
+                <span class="preset-cta">Starten ›</span>
+            </a>
+        </div>
+    }
+</section>
+
+<partial name="Controls/_Pagination" model="@(new PaginationModel
+{
+    Id = "catalogPagination",
+    Page = Model.P,
+    TotalPages = Model.TotalPages,
+    UrlFor = Model.UrlForPage,
+})" />
+
+<div class="action-bar">
+    <a class="btn btn-secondary" href="/games/create">🛠 Eigenes Spiel ohne Preset</a>
+</div>

@@ -37,6 +37,8 @@ public class SearchSelectModel
     public string Id { get; set; } = "searchSelect";
     /// <summary>Id des Hidden-Inputs, der den Wert hält (für JS-Zugriff und Change-Events).</summary>
     public string HiddenId { get; set; } = "searchSelectValue";
+    /// <summary>Optionaler name des Hidden-Inputs, damit der Wert mitgepostet wird.</summary>
+    public string? HiddenName { get; set; }
     public string Placeholder { get; set; } = "Bitte wählen …";
     public string SearchPlaceholder { get; set; } = "Suchen …";
     public string? Selected { get; set; }

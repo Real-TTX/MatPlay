@@ -3,7 +3,7 @@
     var selected = Model.Options.FirstOrDefault(o => o.Value == (Model.Selected ?? ""));
 }
 <div class="mp-select" data-mpselect id="@Model.Id">
-    <input type="hidden" id="@Model.HiddenId" value="@(Model.Selected ?? "")" />
+    <input type="hidden" id="@Model.HiddenId" name="@Model.HiddenName" value="@(Model.Selected ?? "")" />
     <button type="button" class="mp-select-trigger" data-placeholder="@Model.Placeholder">
         <span class="mp-select-label">@(selected?.Label ?? Model.Placeholder)</span>
         <span class="mp-select-caret">▾</span>

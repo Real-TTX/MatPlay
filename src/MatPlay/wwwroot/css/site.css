@@ -455,6 +455,34 @@ a { color: var(--primary); text-decoration: none; }
 .preset-desc { color: var(--text-dim); font-size: 0.88rem; flex: 1; }
 .preset-cta { font-weight: 800; color: var(--primary); font-size: 0.9rem; }
 
+/* ============ Dashboard ============ */
+.dash-section { margin-bottom: 30px; }
+.dash-section-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 12px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.dash-section-head h3 { margin: 0; font-size: 1.15rem; }
+.dash-link { font-weight: 700; font-size: 0.9rem; }
+.dash-hint { color: var(--text-dim); font-size: 0.85rem; }
+.dash-empty {
+    padding: 26px; text-align: center;
+    background: var(--panel); border: 1px dashed var(--border); border-radius: var(--radius);
+}
+.dash-empty p { margin: 0 0 14px; color: var(--text-dim); }
+
+.game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+.game-card {
+    display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text); transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.game-card:hover { transform: translateY(-2px); border-color: var(--primary); box-shadow: var(--glow-primary); }
+.game-card-icon { font-size: 1.7rem; flex-shrink: 0; }
+.game-card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.game-card-name { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.game-card-meta { font-size: 0.8rem; color: var(--text-dim); }
+.preset-card-all { border-style: dashed; }
+
 .recent h3 { margin: 30px 0 10px; }
 .recent-list { display: flex; flex-direction: column; gap: 8px; }
 .recent-item {

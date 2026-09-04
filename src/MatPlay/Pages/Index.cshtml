@@ -1,93 +1,68 @@
 @page "/"
 @model IndexModel
-@using MatPlay.Pages.Shared.Controls
 @{
     ViewData["Title"] = "Start";
 }
 
-<section class="hero">
-    <h2 class="hero-title">Spiel starten. <span class="neon">Punkte zählen.</span> Gewinnen.</h2>
-    <p class="hero-sub">Wähle ein Spiel – ohne Anmeldung, direkt loslegen. Link teilen und alle zählen mit.</p>
-</section>
+<section class="dash-section">
+    <div class="dash-section-head">
+        <h3>🎮 Aktive Spiele</h3>
+        <a class="dash-link" href="/games">Alle Spiele ›</a>
+    </div>
 
-<partial name="Controls/_ListToolbar" model="@(new ListToolbarModel
-{
-    Id = "catalogToolbar",
-    Action = "/",
-    Search = Model.Q,
-    SearchPlaceholder = "Spiel suchen (z.B. Qwixx, 20 Ab) …",
-    Filters = Model.CanFavorite
-        ? [new ToolbarFilter
-        {
-            Name = "fav", Label = "Anzeigen", Selected = Model.Fav,
-            Options = [("", "Alle Spiele"), ("1", "⭐ Nur Favoriten")],
-        }]
-        : [],
-})" />
-
-@if (Model.Presets.Count == 0)
-{
-    <p class="table-empty">Kein Spiel gefunden – probier einen anderen Suchbegriff. 🔍</p>
-}
-
-<section class="preset-grid">
-    @foreach (var preset in Model.Presets)
+    @if (Model.ActiveGames.Count == 0)
     {
-        var isFavorite = Model.FavoriteKeys.Contains(preset.Key);
-        <div class="preset-card accent-@preset.Accent">
-            @if (Model.CanFavorite)
+        <div class="dash-empty">
+            <p>Gerade läuft kein Spiel – Zeit für eine neue Runde! 🎲</p>
+            <a class="btn btn-primary" href="/games/new">＋ Neues Spiel starten</a>
+        </div>
+    }
+    else
+    {
+        <div class="game-grid">
+            @foreach (var game in Model.ActiveGames)
             {
-                <form method="post" asp-page-handler="toggleFavorite" class="fav-form">
-                    <input type="hidden" name="presetKey" value="@preset.Key" />
-                    <input type="hidden" name="q" value="@Model.Q" />
-                    <input type="hidden" name="fav" value="@Model.Fav" />
-                    <input type="hidden" name="p" value="@Model.P" />
-                    <button type="submit" class="fav-btn @(isFavorite ? "active" : "")"
-                            title="@(isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen")">
-                        @(isFavorite ? "★" : "☆")
-                    </button>
-                </form>
+                var module = ModuleRegistry.GetModule(game.ModuleKey);
+                <a class="game-card" href="/play/@game.ShareToken">
+                    <span class="game-card-icon">@(module?.Icon ?? "🎮")</span>
+                    <span class="game-card-body">
+                        <span class="game-card-name">@game.Name</span>
+                        <span class="game-card-meta">@(module?.Name ?? game.ModuleKey) · @game.UpdateDate.ToLocalTime().ToString("dd.MM. HH:mm")</span>
+                    </span>
+                    <span class="badge badge-live">Läuft</span>
+                </a>
             }
-            <a class="preset-link" href="/games/create?preset=@preset.Key">
-                <span class="preset-icon">@preset.Icon</span>
-                <span class="preset-name">@preset.Name</span>
-                <span class="preset-desc">@preset.Description</span>
-                <span class="preset-cta">Starten ›</span>
-            </a>
         </div>
     }
 </section>
 
-<partial name="Controls/_Pagination" model="@(new PaginationModel
-{
-    Id = "catalogPagination",
-    Page = Model.P,
-    TotalPages = Model.TotalPages,
-    UrlFor = Model.UrlForPage,
-})" />
-
-@if (Model.RecentGames.Count > 0)
-{
-    <section class="recent">
-        <h3>Zuletzt gespielt</h3>
-        <div class="recent-list">
-            @foreach (var game in Model.RecentGames)
-            {
-                var module = ModuleRegistry.GetModule(game.ModuleKey);
-                var running = game.Status == GameStatus.Running;
-                <div class="recent-item">
-                    <a class="recent-link" href="@(running ? $"/play/{game.ShareToken}" : $"/games/create?from={game.Id}")"
-                       title="@(running ? "Weiterspielen" : "Nochmal spielen – gleiche Einstellungen und Spieler")">
-                        <span class="recent-icon">@(module?.Icon ?? "🎮")</span>
-                        <span class="recent-name">@game.Name</span>
-                        <span class="badge @(running ? "badge-live" : "badge-done")">
-                            @(running ? "Läuft" : "Beendet")
-                        </span>
-                    </a>
-                    <a class="icon-btn" href="/games/create?from=@game.Id" title="Nochmal spielen">↻</a>
-                    <a class="icon-btn" href="/play/@game.ShareToken" title="@(running ? "Weiterspielen" : "Ergebnis ansehen")">▶️</a>
-                </div>
-            }
+<section class="dash-section">
+    <div class="dash-section-head">
+        <h3>🚀 Spiel starten</h3>
+        @if (Model.HasAnyGames)
+        {
+            <span class="dash-hint">Deine zuletzt gespielten Spielarten</span>
+        }
+    </div>
+    <div class="preset-grid">
+        @foreach (var preset in Model.TopPresets)
+        {
+            <div class="preset-card accent-@preset.Accent">
+                <a class="preset-link" href="/games/create?preset=@preset.Key">
+                    <span class="preset-icon">@preset.Icon</span>
+                    <span class="preset-name">@preset.Name</span>
+                    <span class="preset-desc">@preset.Description</span>
+                    <span class="preset-cta">Starten ›</span>
+                </a>
+            </div>
+        }
+        <div class="preset-card accent-cyan preset-card-all">
+            <a class="preset-link" href="/games/new">
+                <span class="preset-icon">🗂</span>
+                <span class="preset-name">Alle anzeigen</span>
+                <span class="preset-desc">Der komplette Katalog mit Suche und Favoriten.</span>
+                <span class="preset-cta">Zum Katalog ›</span>
+            </a>
         </div>
-    </section>
-}
+    </div>
+</section>

@@ -46,6 +46,7 @@ public class CreateModel(GameService games, SavedPlayerService savedPlayers) : P
             var template = await games.GetByIdAsync(fromId);
             if (template != null && games.IsOwner(template))
             {
+                Preset = template.PresetKey;
                 ModuleKey = template.ModuleKey;
                 Name = template.Name;
                 Players = (await games.GetPlayersAsync(template.Id)).Select(p => p.Name).ToList();
@@ -122,7 +123,8 @@ public class CreateModel(GameService games, SavedPlayerService savedPlayers) : P
             _ => "{}",
         };
 
-        var game = await games.CreateAsync(Name.Trim(), ModuleKey, configJson, playerNames, SavePlayers);
+        var presetKey = Preset != null && ModuleRegistry.GetPreset(Preset)?.ModuleKey == ModuleKey ? Preset : null;
+        var game = await games.CreateAsync(Name.Trim(), ModuleKey, configJson, playerNames, SavePlayers, presetKey);
         return Redirect($"/play/{game.ShareToken}");
     }
 

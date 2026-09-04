@@ -94,6 +94,7 @@ using (var scope = app.Services.CreateScope())
         """ALTER TABLE "GamePlayer" ADD COLUMN "SavedPlayerId" INTEGER NULL;""",
         """ALTER TABLE "SavedPlayer" ADD COLUMN "Code" TEXT NOT NULL DEFAULT '';""",
         """ALTER TABLE "SavedPlayer" ADD COLUMN "Color" TEXT NOT NULL DEFAULT '';""",
+        """ALTER TABLE "Game" ADD COLUMN "PresetKey" TEXT NULL;""",
     })
     {
         try

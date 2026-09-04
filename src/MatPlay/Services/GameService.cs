@@ -6,12 +6,13 @@ namespace MatPlay.Services;
 public class GameService(AppDbContext db, CurrentContext current, SavedPlayerService savedPlayers)
 {
     public async Task<Game> CreateAsync(string name, string moduleKey, string configJson,
-        IEnumerable<string> playerNames, bool savePlayers = false)
+        IEnumerable<string> playerNames, bool savePlayers = false, string? presetKey = null)
     {
         var game = new Game
         {
             Name = name,
             ModuleKey = moduleKey,
+            PresetKey = presetKey,
             ConfigJson = configJson,
             OwnerUserId = current.UserId,
             OwnerSessionId = current.UserId == null ? current.SessionId : null,
