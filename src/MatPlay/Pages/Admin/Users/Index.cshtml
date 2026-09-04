@@ -36,7 +36,7 @@
             <tr>
                 <th class="col-check"></th>
                 <th>Benutzername</th>
-                <th>Anzeigename</th>
+                <th class="col-hide-mobile">Anzeigename</th>
                 <th>Rolle</th>
                 <th class="col-hide-mobile">Erstellt</th>
                 <th class="col-actions"></th>
@@ -48,7 +48,7 @@
                 <tr>
                     <td class="col-check"><input type="checkbox" name="selected" value="@user.Id" aria-label="@user.Username auswählen" /></td>
                     <td><a class="table-link" href="/admin/users/edit/@user.Id">@user.Username</a></td>
-                    <td>@user.DisplayName</td>
+                    <td class="col-hide-mobile">@user.DisplayName</td>
                     <td><span class="badge @(user.Role == Roles.Admin ? "badge-admin" : "badge-user")">@user.Role</span></td>
                     <td class="col-hide-mobile">@user.CreateDate.ToLocalTime().ToString("dd.MM.yyyy")</td>
                     <td class="col-actions">

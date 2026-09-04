@@ -43,7 +43,7 @@
             <tr>
                 <th class="col-check"></th>
                 <th>Spiel</th>
-                <th>Modul</th>
+                <th class="col-hide-mobile">Modul</th>
                 <th>Status</th>
                 <th class="col-hide-mobile">Zuletzt aktiv</th>
                 <th class="col-actions"></th>
@@ -60,7 +60,7 @@
                 <tr>
                     <td class="col-check"><input type="checkbox" name="selected" value="@game.Id" aria-label="@game.Name auswählen" /></td>
                     <td><a class="table-link" href="/play/@game.ShareToken">@(module?.Icon ?? "🎮") @game.Name</a></td>
-                    <td>@(module?.Name ?? game.ModuleKey)</td>
+                    <td class="col-hide-mobile">@(module?.Name ?? game.ModuleKey)</td>
                     <td>
                         <span class="badge @(game.Status == GameStatus.Running ? "badge-live" : "badge-done")">
                             @(game.Status == GameStatus.Running ? "Läuft" : "Beendet")

@@ -535,5 +535,23 @@ a { color: var(--primary); text-decoration: none; }
     .counter-board { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
     .counter-total { font-size: 2.4rem; }
     .counter-btn { width: 52px; height: 52px; }
-    .qwixx-cell { min-width: 36px; height: 38px; font-size: 0.95rem; }
+
+    /* Qwixx: Reihe als 12er-Grid, passt exakt in die Bildschirmbreite */
+    .qwixx-row {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 3px; padding: 6px; overflow-x: hidden;
+    }
+    .qwixx-cell {
+        min-width: 0; width: 100%; height: 40px;
+        font-size: clamp(0.7rem, 3.2vw, 0.95rem);
+        border-radius: 7px; padding: 0;
+    }
+    .qwixx-cell.lock { font-size: 0.75rem; }
+    .qwixx-misses .qwixx-cell { width: 40px; }
+
+    /* Kniffel: kompaktere Eingaben */
+    .kniffel-controls input { width: 64px; }
+    .kniffel-label { font-size: 0.9rem; }
+    .kniffel-row { gap: 6px; }
 }
