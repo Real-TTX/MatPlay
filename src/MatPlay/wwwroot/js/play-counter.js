@@ -64,34 +64,17 @@
             const totalEl = document.createElement('div');
             totalEl.className = 'counter-total';
             totalEl.textContent = total;
-            totalEl.title = 'Tippen für eigenen Wert';
-            if (running && !cfg.useRounds) {
-                totalEl.addEventListener('click', () => customValue(state, player, total));
-            }
             card.appendChild(totalEl);
 
             if (running) {
                 if (cfg.useRounds) {
-                    const form = document.createElement('div');
-                    form.className = 'counter-round-form';
-                    const input = document.createElement('input');
-                    input.type = 'number';
-                    input.placeholder = 'Punkte';
-                    input.inputMode = 'numeric';
-                    const btn = document.createElement('button');
-                    btn.className = 'btn btn-primary btn-sm';
-                    btn.textContent = '✔';
-                    btn.title = 'Rundenpunkte eintragen';
-                    const submit = () => {
-                        const value = parseInt(input.value, 10);
-                        if (Number.isNaN(value)) return;
-                        addScore(state, player, value, total);
-                        input.value = '';
-                    };
-                    btn.addEventListener('click', submit);
-                    input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
-                    form.append(input, btn);
-                    card.appendChild(form);
+                    // Rundenmodus: Punkte am Rundenende eintragen (z.B. Flip 7, Frantic)
+                    const nextRound = state.scores.filter(s => s.playerId === player.id).length + 1;
+                    const roundTag = document.createElement('div');
+                    roundTag.className = 'counter-round-tag';
+                    roundTag.textContent = `Runde ${nextRound}`;
+                    card.appendChild(roundTag);
+                    card.appendChild(entryForm(state, player, total, 'Punkte der Runde'));
                 } else {
                     const controls = document.createElement('div');
                     controls.className = 'counter-controls';
@@ -105,6 +88,23 @@
                     plus.addEventListener('click', () => addScore(state, player, cfg.step || 1, total));
                     controls.append(minus, plus);
                     card.appendChild(controls);
+
+                    // Freie Punkteeingabe: einklappbares Feld statt prompt()
+                    const form = entryForm(state, player, total, 'z.B. 15 oder -3');
+                    form.hidden = true;
+                    const toggle = document.createElement('button');
+                    toggle.type = 'button';
+                    toggle.className = 'btn btn-ghost btn-sm counter-entry-toggle';
+                    toggle.textContent = '✎ Punkte eingeben';
+                    toggle.addEventListener('click', () => {
+                        form.hidden = !form.hidden;
+                        if (!form.hidden) form.querySelector('input').focus();
+                    });
+                    totalEl.title = 'Tippen für eigene Punkteeingabe';
+                    totalEl.style.cursor = 'pointer';
+                    totalEl.addEventListener('click', () => toggle.click());
+                    card.appendChild(toggle);
+                    card.appendChild(form);
                 }
             }
             board.appendChild(card);
@@ -124,12 +124,28 @@
         MatPlayCore.action('/score', { playerId: player.id, value, round });
     }
 
-    function customValue(state, player, total) {
-        const raw = prompt(`Punkte für ${player.name} (z.B. 5 oder -3):`, '');
-        if (raw === null) return;
-        const value = parseInt(raw, 10);
-        if (Number.isNaN(value) || value === 0) return;
-        addScore(state, player, value, total);
+    function entryForm(state, player, total, placeholder) {
+        const form = document.createElement('div');
+        form.className = 'counter-round-form';
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.placeholder = placeholder;
+        input.inputMode = 'numeric';
+        input.setAttribute('aria-label', `Punkte für ${player.name}`);
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-primary btn-sm';
+        btn.textContent = '✔';
+        btn.title = 'Punkte eintragen';
+        const submit = () => {
+            const value = parseInt(input.value, 10);
+            if (Number.isNaN(value)) return;
+            addScore(state, player, value, total);
+            input.value = '';
+        };
+        btn.addEventListener('click', submit);
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+        form.append(input, btn);
+        return form;
     }
 
     function renderRounds(state) {

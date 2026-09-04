@@ -547,7 +547,13 @@ a { color: var(--primary); text-decoration: none; }
 .counter-btn.plus:active { box-shadow: 0 0 14px rgba(163, 255, 18, 0.5); }
 .counter-btn.minus { border-color: var(--danger); color: var(--danger); }
 .counter-btn.minus:active { box-shadow: 0 0 14px rgba(255, 61, 113, 0.5); }
+.counter-round-tag {
+    font-size: 0.75rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--text-dim); margin-top: 6px;
+}
+.counter-entry-toggle { margin-top: 6px; }
 .counter-round-form { display: flex; gap: 8px; margin-top: 10px; justify-content: center; }
+.counter-round-form[hidden] { display: none; }
 .counter-round-form input {
     width: 100px; padding: 9px; text-align: center; font-size: 1.05rem; font-weight: 700;
     background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text);
