@@ -1,0 +1,33 @@
+@model MatPlay.Pages.Shared.Controls.SearchSelectModel
+@{
+    var selected = Model.Options.FirstOrDefault(o => o.Value == (Model.Selected ?? ""));
+}
+<div class="mp-select" data-mpselect id="@Model.Id">
+    <input type="hidden" id="@Model.HiddenId" value="@(Model.Selected ?? "")" />
+    <button type="button" class="mp-select-trigger" data-placeholder="@Model.Placeholder">
+        <span class="mp-select-label">@(selected?.Label ?? Model.Placeholder)</span>
+        <span class="mp-select-caret">▾</span>
+    </button>
+    <div class="mp-select-backdrop"></div>
+    <div class="mp-select-panel" role="dialog" aria-modal="true">
+        <div class="mp-select-head">
+            <input type="search" class="mp-select-search" placeholder="@Model.SearchPlaceholder" aria-label="@Model.SearchPlaceholder" />
+            <button type="button" class="mp-select-close" aria-label="Schließen">✖</button>
+        </div>
+        <div class="mp-select-options">
+            @foreach (var option in Model.Options)
+            {
+                <button type="button"
+                        class="mp-select-option @(option.Value == (Model.Selected ?? "") ? "selected" : "")"
+                        data-value="@option.Value"
+                        data-text="@(option.SearchText ?? option.Label.ToLowerInvariant())">
+                    <span class="mp-option-main">@option.Label</span>
+                    @if (!string.IsNullOrEmpty(option.Description))
+                    {
+                        <span class="mp-option-desc">@option.Description</span>
+                    }
+                </button>
+            }
+        </div>
+    </div>
+</div>

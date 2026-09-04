@@ -1,5 +1,6 @@
 @page "/games/create"
 @model MatPlay.Pages.Games.CreateModel
+@using MatPlay.Pages.Shared.Controls
 @{
     ViewData["Title"] = "Neues Spiel";
     ViewData["Breadcrumb"] = new List<(string, string?)> { ("Meine Spiele", "/games"), ("Neues Spiel", null) };
@@ -11,21 +12,33 @@
 }
 
 <form method="post" class="form" id="createForm">
+    <div class="form-field">
+        <span>Preset</span>
+        <partial name="Controls/_SearchSelect" model="@(new SearchSelectModel
+        {
+            Id = "presetPicker",
+            HiddenId = "presetSelect",
+            Placeholder = "🛠 Eigenes Spiel",
+            SearchPlaceholder = "Preset suchen (z.B. Qwixx, Frantic) …",
+            Selected = Model.Preset,
+            Options = new List<SearchSelectOption>
+                {
+                    new() { Value = "", Label = "🛠 Eigenes Spiel", Description = "Modul und Einstellungen selbst wählen", SearchText = "eigenes spiel custom" },
+                }
+                .Concat(ModuleRegistry.Presets.Select(p => new SearchSelectOption
+                {
+                    Value = p.Key,
+                    Label = $"{p.Icon} {p.Name}",
+                    Description = p.Description,
+                    SearchText = (p.Name + " " + p.Description).ToLowerInvariant(),
+                })).ToList(),
+        })" />
+    </div>
+
     <div class="form-grid">
         <label class="form-field">
             <span>Name des Spiels</span>
             <input asp-for="Name" placeholder="z.B. Spieleabend bei Max" required maxlength="80" />
-        </label>
-
-        <label class="form-field">
-            <span>Preset</span>
-            <select id="presetSelect">
-                <option value="">— Eigenes Spiel —</option>
-                @foreach (var preset in ModuleRegistry.Presets)
-                {
-                    <option value="@preset.Key" selected="@(preset.Key == Model.Preset)">@preset.Icon @preset.Name</option>
-                }
-            </select>
         </label>
 
         <label class="form-field">
@@ -156,7 +169,10 @@
             munchkinConfig.style.display = moduleSelect.value === 'munchkin' ? '' : 'none';
             targetField.style.display = hasTarget.checked ? '' : 'none';
         }
-        moduleSelect.addEventListener('change', () => { presetSelect.value = ''; syncVisibility(); });
+        moduleSelect.addEventListener('change', () => {
+            document.getElementById('presetPicker').mpSet('');
+            syncVisibility();
+        });
         hasTarget.addEventListener('change', syncVisibility);
         syncVisibility();
 

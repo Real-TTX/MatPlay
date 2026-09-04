@@ -45,6 +45,51 @@ document.addEventListener('click', async e => {
     }
 });
 
+// Custom Select (durchsuchbares Dropdown, mobil als Dialog) – Markup: Controls/_SearchSelect
+window.MPSelect = (function () {
+    function init(root) {
+        const trigger = root.querySelector('.mp-select-trigger');
+        const search = root.querySelector('.mp-select-search');
+        const hidden = root.querySelector('input[type=hidden]');
+        const closeBtn = root.querySelector('.mp-select-close');
+        const backdrop = root.querySelector('.mp-select-backdrop');
+        const options = [...root.querySelectorAll('.mp-select-option')];
+
+        function open() {
+            root.classList.add('open');
+            search.value = '';
+            filter('');
+            setTimeout(() => search.focus(), 60);
+        }
+        function close() { root.classList.remove('open'); }
+        function filter(query) {
+            query = query.trim().toLowerCase();
+            options.forEach(o => o.hidden = query !== '' && !o.dataset.text.includes(query));
+        }
+        function set(value, silent) {
+            hidden.value = value;
+            options.forEach(o => o.classList.toggle('selected', o.dataset.value === value));
+            const selected = options.find(o => o.dataset.value === value);
+            root.querySelector('.mp-select-label').textContent = selected
+                ? selected.querySelector('.mp-option-main').textContent.trim()
+                : trigger.dataset.placeholder;
+            if (!silent) hidden.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        trigger.addEventListener('click', () => root.classList.contains('open') ? close() : open());
+        closeBtn.addEventListener('click', close);
+        backdrop.addEventListener('click', close);
+        search.addEventListener('input', () => filter(search.value));
+        options.forEach(o => o.addEventListener('click', () => { set(o.dataset.value); close(); }));
+        document.addEventListener('click', e => { if (!root.contains(e.target)) close(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+
+        root.mpSet = value => set(value, true);
+    }
+    document.querySelectorAll('[data-mpselect]').forEach(init);
+    return { init };
+})();
+
 // Service Worker (PWA)
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});

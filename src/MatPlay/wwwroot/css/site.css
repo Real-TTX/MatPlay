@@ -322,6 +322,58 @@ a { color: var(--primary); text-decoration: none; }
     border-radius: var(--radius-sm); color: var(--text); font-family: var(--font);
 }
 
+/* ============ SearchSelect (durchsuchbares Dropdown, mobil Dialog) ============ */
+.mp-select { position: relative; }
+.mp-select-trigger {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 11px 14px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text); font-family: var(--font);
+    font-size: 0.98rem; font-weight: 700; cursor: pointer; text-align: left;
+}
+.mp-select-trigger:hover, .mp-select.open .mp-select-trigger {
+    border-color: var(--primary); box-shadow: var(--glow-primary);
+}
+.mp-select-caret { color: var(--text-dim); }
+.mp-select-panel {
+    display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 80;
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); max-height: 420px; flex-direction: column; overflow: hidden;
+}
+.mp-select.open .mp-select-panel { display: flex; }
+.mp-select-head { display: flex; gap: 8px; padding: 10px; border-bottom: 1px solid var(--border); }
+.mp-select-search {
+    flex: 1; padding: 9px 12px; background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text); font-family: var(--font);
+}
+.mp-select-search:focus { outline: none; border-color: var(--primary); box-shadow: var(--glow-primary); }
+.mp-select-close {
+    display: none; border: none; background: transparent; color: var(--text-dim);
+    font-size: 1.1rem; cursor: pointer; padding: 4px 8px;
+}
+.mp-select-options { overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+.mp-select-option {
+    text-align: left; padding: 9px 12px; border-radius: var(--radius-sm);
+    background: transparent; border: 1px solid transparent; color: var(--text);
+    font-family: var(--font); cursor: pointer;
+}
+.mp-select-option:hover { background: var(--panel-2); }
+.mp-select-option.selected { border-color: var(--primary); box-shadow: var(--glow-primary); }
+.mp-option-main { display: block; font-weight: 800; font-size: 0.95rem; }
+.mp-option-desc { display: block; font-size: 0.8rem; color: var(--text-dim); margin-top: 1px; }
+.mp-select-backdrop { display: none; }
+
+@media (max-width: 860px) {
+    .mp-select.open .mp-select-backdrop {
+        display: block; position: fixed; inset: 0; z-index: 90;
+        background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(2px);
+    }
+    .mp-select.open .mp-select-panel {
+        position: fixed; z-index: 91; left: 12px; right: 12px; top: 7dvh;
+        max-height: 82dvh;
+    }
+    .mp-select-close { display: inline-flex; }
+}
+
 /* Vorauswahl-Chips (gespeicherte Spieler) */
 .chip-box { margin-bottom: 12px; }
 .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }

@@ -31,6 +31,28 @@ public class PaginationModel
     public required Func<int, string> UrlFor { get; set; }
 }
 
+/// <summary>Durchsuchbares Custom-Dropdown; öffnet sich mobil als Dialog. JS-Logik in site.js (MPSelect).</summary>
+public class SearchSelectModel
+{
+    public string Id { get; set; } = "searchSelect";
+    /// <summary>Id des Hidden-Inputs, der den Wert hält (für JS-Zugriff und Change-Events).</summary>
+    public string HiddenId { get; set; } = "searchSelectValue";
+    public string Placeholder { get; set; } = "Bitte wählen …";
+    public string SearchPlaceholder { get; set; } = "Suchen …";
+    public string? Selected { get; set; }
+    public List<SearchSelectOption> Options { get; set; } = [];
+}
+
+public class SearchSelectOption
+{
+    public string Value { get; set; } = "";
+    /// <summary>Anzeige in Trigger und Liste (z.B. Icon + Name).</summary>
+    public string Label { get; set; } = "";
+    public string? Description { get; set; }
+    /// <summary>Kleingeschriebener Suchtext; leer = aus Label abgeleitet.</summary>
+    public string? SearchText { get; set; }
+}
+
 public class TabsModel
 {
     public string Id { get; set; } = "tabs";
