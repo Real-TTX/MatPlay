@@ -74,13 +74,19 @@
             @foreach (var game in Model.RecentGames)
             {
                 var module = ModuleRegistry.GetModule(game.ModuleKey);
-                <a class="recent-item" href="/play/@game.ShareToken">
-                    <span class="recent-icon">@(module?.Icon ?? "🎮")</span>
-                    <span class="recent-name">@game.Name</span>
-                    <span class="badge @(game.Status == GameStatus.Running ? "badge-live" : "badge-done")">
-                        @(game.Status == GameStatus.Running ? "Läuft" : "Beendet")
-                    </span>
-                </a>
+                var running = game.Status == GameStatus.Running;
+                <div class="recent-item">
+                    <a class="recent-link" href="@(running ? $"/play/{game.ShareToken}" : $"/games/create?from={game.Id}")"
+                       title="@(running ? "Weiterspielen" : "Nochmal spielen – gleiche Einstellungen und Spieler")">
+                        <span class="recent-icon">@(module?.Icon ?? "🎮")</span>
+                        <span class="recent-name">@game.Name</span>
+                        <span class="badge @(running ? "badge-live" : "badge-done")">
+                            @(running ? "Läuft" : "Beendet")
+                        </span>
+                    </a>
+                    <a class="icon-btn" href="/games/create?from=@game.Id" title="Nochmal spielen">↻</a>
+                    <a class="icon-btn" href="/play/@game.ShareToken" title="@(running ? "Weiterspielen" : "Ergebnis ansehen")">▶️</a>
+                </div>
             }
         </div>
     </section>

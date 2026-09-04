@@ -34,7 +34,8 @@ builder.Services.AddScoped<CurrentContext>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<GameService>();
 builder.Services.AddScoped<SavedPlayerService>();
-builder.Services.AddSingleton(new AppConfigService(dataDir));
+var appConfigService = new AppConfigService(dataDir);
+builder.Services.AddSingleton(appConfigService);
 builder.Services.AddSingleton(new AppInfo(appVersion));
 
 builder.Services
@@ -91,6 +92,8 @@ using (var scope = app.Services.CreateScope())
     {
         """ALTER TABLE "User" ADD COLUMN "MustChangePassword" INTEGER NOT NULL DEFAULT 0;""",
         """ALTER TABLE "GamePlayer" ADD COLUMN "SavedPlayerId" INTEGER NULL;""",
+        """ALTER TABLE "SavedPlayer" ADD COLUMN "Code" TEXT NOT NULL DEFAULT '';""",
+        """ALTER TABLE "SavedPlayer" ADD COLUMN "Color" TEXT NOT NULL DEFAULT '';""",
     })
     {
         try
@@ -102,6 +105,31 @@ using (var scope = app.Services.CreateScope())
             // Spalte existiert bereits
         }
     }
+    // Backfill: Kürzel und Farben für bestehende Spielerprofile vergeben
+    if (db.SavedPlayers.Any(p => p.UpdateState != UpdateStates.Deleted && (p.Code == "" || p.Color == "")))
+    {
+        var all = db.SavedPlayers.Where(p => p.UpdateState != UpdateStates.Deleted).ToList();
+        foreach (var group in all.GroupBy(p => (p.OwnerUserId, p.OwnerSessionId)))
+        {
+            var codes = group.Where(p => p.Code != "").Select(p => p.Code).ToList();
+            var colors = group.Where(p => p.Color != "").Select(p => p.Color).ToList();
+            foreach (var player in group)
+            {
+                if (player.Code == "")
+                {
+                    player.Code = SavedPlayerService.GenerateCode(player.Name, codes, appConfigService.Config.PlayerCodeLength);
+                    codes.Add(player.Code);
+                }
+                if (player.Color == "")
+                {
+                    player.Color = SavedPlayerService.NextColor(colors);
+                    colors.Add(player.Color);
+                }
+            }
+        }
+        db.SaveChanges();
+    }
+
     if (!db.Users.Any())
     {
         db.Users.Add(new User

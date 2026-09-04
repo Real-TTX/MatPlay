@@ -10,6 +10,8 @@ namespace MatPlay.Pages.Games;
 public class CreateModel(GameService games, SavedPlayerService savedPlayers) : PageModel
 {
     [BindProperty(SupportsGet = true)] public string? Preset { get; set; }
+    /// <summary>Spiel-Id als Vorlage ("Nochmal spielen"): übernimmt Modul, Konfiguration und Spieler.</summary>
+    [BindProperty(SupportsGet = true)] public long? From { get; set; }
 
     [BindProperty] public string Name { get; set; } = "";
     [BindProperty] public string ModuleKey { get; set; } = "counter";
@@ -37,28 +39,50 @@ public class CreateModel(GameService games, SavedPlayerService savedPlayers) : P
     public async Task OnGetAsync()
     {
         await LoadSavedPlayersAsync();
+
+        // "Nochmal spielen": bestehendes Spiel als Vorlage
+        if (From is long fromId)
+        {
+            var template = await games.GetByIdAsync(fromId);
+            if (template != null && games.IsOwner(template))
+            {
+                ModuleKey = template.ModuleKey;
+                Name = template.Name;
+                Players = (await games.GetPlayersAsync(template.Id)).Select(p => p.Name).ToList();
+                ApplyConfig(template.ModuleKey, template.ConfigJson);
+                return;
+            }
+        }
+
         var preset = Preset != null ? ModuleRegistry.GetPreset(Preset) : null;
         if (preset == null) return;
-
         ModuleKey = preset.ModuleKey;
         Name = preset.Name;
-        if (preset.ModuleKey == "qwixx" && preset.ConfigJson.Contains("mixed"))
-            QwixxVariant = preset.ConfigJson.Contains("mixedColors") ? "mixedColors" : "mixedNumbers";
-        if (preset.ModuleKey == "munchkin")
+        ApplyConfig(preset.ModuleKey, preset.ConfigJson);
+    }
+
+    private void ApplyConfig(string moduleKey, string configJson)
+    {
+        switch (moduleKey)
         {
-            var config = JsonSerializer.Deserialize<MunchkinConfig>(preset.ConfigJson, ModuleRegistry.JsonOpts)!;
-            MunchkinTrackHealth = config.TrackHealth;
-        }
-        if (preset.ModuleKey == "counter")
-        {
-            var config = JsonSerializer.Deserialize<CounterConfig>(preset.ConfigJson, ModuleRegistry.JsonOpts)!;
-            StartScore = config.StartScore;
-            Step = config.Step;
-            HasTarget = config.TargetScore != null;
-            TargetScore = config.TargetScore ?? 0;
-            LowestWins = config.LowestWins;
-            AllowNegative = config.AllowNegative;
-            UseRounds = config.UseRounds;
+            case "counter":
+                var counter = JsonSerializer.Deserialize<CounterConfig>(configJson, ModuleRegistry.JsonOpts) ?? new CounterConfig();
+                StartScore = counter.StartScore;
+                Step = counter.Step;
+                HasTarget = counter.TargetScore != null;
+                TargetScore = counter.TargetScore ?? 0;
+                LowestWins = counter.LowestWins;
+                AllowNegative = counter.AllowNegative;
+                UseRounds = counter.UseRounds;
+                break;
+            case "qwixx":
+                var qwixx = JsonSerializer.Deserialize<QwixxConfig>(configJson, ModuleRegistry.JsonOpts);
+                QwixxVariant = string.IsNullOrEmpty(qwixx?.Variant) ? "classic" : qwixx.Variant;
+                break;
+            case "munchkin":
+                var munchkin = JsonSerializer.Deserialize<MunchkinConfig>(configJson, ModuleRegistry.JsonOpts) ?? new MunchkinConfig();
+                MunchkinTrackHealth = munchkin.TrackHealth;
+                break;
         }
     }
 
@@ -107,4 +131,15 @@ public class CreateModel(GameService games, SavedPlayerService savedPlayers) : P
             .OrderByDescending(p => p.LastUsedDate)
             .Take(24)
             .ToListAsync();
+
+    /// <summary>Alle Presets als JSON für die clientseitige Preset-Auswahl im Formular.</summary>
+    public string PresetsJson => JsonSerializer.Serialize(
+        ModuleRegistry.Presets.Select(p => new
+        {
+            key = p.Key,
+            name = p.Name,
+            icon = p.Icon,
+            moduleKey = p.ModuleKey,
+            config = JsonSerializer.Deserialize<JsonElement>(p.ConfigJson),
+        }), ModuleRegistry.JsonOpts);
 }

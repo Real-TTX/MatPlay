@@ -27,6 +27,7 @@
             <tr>
                 <th class="col-check"></th>
                 <th>Name</th>
+                <th>Kürzel</th>
                 <th>Spiele</th>
                 <th class="col-hide-mobile">Zuletzt gespielt</th>
                 <th class="col-actions"></th>
@@ -35,13 +36,18 @@
             <tbody>
             @if (Model.Items.Count == 0)
             {
-                <tr><td colspan="5" class="table-empty">Noch keine gespeicherten Spieler – beim Erstellen eines Spiels werden sie automatisch angelegt. 🎲</td></tr>
+                <tr><td colspan="6" class="table-empty">Noch keine gespeicherten Spieler – beim Erstellen eines Spiels werden sie automatisch angelegt. 🎲</td></tr>
             }
             @foreach (var player in Model.Items)
             {
                 <tr>
                     <td class="col-check"><input type="checkbox" name="selected" value="@player.Id" aria-label="@player.Name auswählen" /></td>
-                    <td><a class="table-link" href="/players/edit/@player.Id">🧑‍🤝‍🧑 @player.Name</a></td>
+                    <td>
+                        <a class="table-link" href="/players/edit/@player.Id">
+                            <span class="color-dot" style="background:@player.Color"></span> @player.Name
+                        </a>
+                    </td>
+                    <td><span class="code-badge" style="border-color:@player.Color; color:@player.Color">@player.Code</span></td>
                     <td>@(Model.GameCounts.GetValueOrDefault(player.Id))</td>
                     <td class="col-hide-mobile">@player.LastUsedDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
                     <td class="col-actions">

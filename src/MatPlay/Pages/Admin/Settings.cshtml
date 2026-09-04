@@ -1,0 +1,35 @@
+@page "/admin/settings"
+@model MatPlay.Pages.Admin.SettingsModel
+@{
+    ViewData["Title"] = "Einstellungen";
+    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Administration", null), ("Einstellungen", null) };
+}
+
+@if (Model.Saved)
+{
+    <div class="alert alert-info">✔ Einstellungen gespeichert.</div>
+}
+
+<form method="post" class="form">
+    <fieldset class="form-section">
+        <legend>Benutzer</legend>
+        <label class="form-check">
+            <input asp-for="AllowRegistration" type="checkbox" />
+            <span>Selbst-Registrierung erlauben</span>
+        </label>
+    </fieldset>
+
+    <fieldset class="form-section">
+        <legend>Spielerprofile</legend>
+        <label class="form-field">
+            <span>Länge der automatischen Kürzel (1–4)</span>
+            <input asp-for="PlayerCodeLength" type="number" min="1" max="4" />
+        </label>
+        <p class="form-hint">Gilt für neu angelegte Spieler; bestehende Kürzel bleiben unverändert und können pro Spieler manuell angepasst werden.</p>
+    </fieldset>
+
+    <div class="action-bar">
+        <button type="submit" class="btn btn-primary">💾 Speichern</button>
+        <a class="btn btn-secondary" href="/">‹ Zurück</a>
+    </div>
+</form>

@@ -11,10 +11,27 @@
 }
 
 <form method="post" class="form">
-    <label class="form-field">
-        <span>Name</span>
-        <input asp-for="Name" required maxlength="40" />
-    </label>
+    <div class="form-grid">
+        <label class="form-field">
+            <span>Name</span>
+            <input asp-for="Name" required maxlength="40" />
+        </label>
+        <label class="form-field">
+            <span>Kürzel (automatisch vergeben, änderbar)</span>
+            <input asp-for="Code" required maxlength="4" />
+        </label>
+        <label class="form-field">
+            <span>Farbe</span>
+            <input asp-for="Color" type="color" class="color-input" />
+        </label>
+    </div>
+    <div class="chip-row color-palette">
+        @foreach (var color in SavedPlayerService.Palette)
+        {
+            <button type="button" class="swatch" style="background:@color" data-color="@color"
+                    title="@color" aria-label="Farbe @color wählen"></button>
+        }
+    </div>
     <div class="action-bar">
         <button type="submit" class="btn btn-primary">💾 Speichern</button>
         <a class="btn btn-secondary" href="/players">‹ Zurück</a>
@@ -59,3 +76,12 @@
         </table>
     </div>
 </section>
+
+@section Scripts {
+    <script>
+        document.querySelector('.color-palette').addEventListener('click', e => {
+            const swatch = e.target.closest('.swatch');
+            if (swatch) document.getElementById('Color').value = swatch.dataset.color;
+        });
+    </script>
+}

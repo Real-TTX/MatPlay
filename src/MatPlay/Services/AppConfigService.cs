@@ -6,6 +6,8 @@ public class AppConfig
 {
     public bool AllowRegistration { get; set; } = true;
     public string AppName { get; set; } = "MatPlay";
+    /// <summary>Länge der automatisch vergebenen Spieler-Kürzel (1-4).</summary>
+    public int PlayerCodeLength { get; set; } = 2;
 }
 
 /// <summary>JSON-Config im Datenverzeichnis (Volume), primäre Verwendung laut Guideline: Configs.</summary>

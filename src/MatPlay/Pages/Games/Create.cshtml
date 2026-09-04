@@ -18,6 +18,17 @@
         </label>
 
         <label class="form-field">
+            <span>Preset</span>
+            <select id="presetSelect">
+                <option value="">— Eigenes Spiel —</option>
+                @foreach (var preset in ModuleRegistry.Presets)
+                {
+                    <option value="@preset.Key" selected="@(preset.Key == Model.Preset)">@preset.Icon @preset.Name</option>
+                }
+            </select>
+        </label>
+
+        <label class="form-field">
             <span>Spielmodul</span>
             <select asp-for="ModuleKey" id="moduleSelect">
                 @foreach (var module in ModuleRegistry.Modules)
@@ -37,7 +48,9 @@
                 <div class="chip-row" id="savedPlayerChips">
                     @foreach (var saved in Model.SavedPlayerList)
                     {
-                        <button type="button" class="chip" data-player="@saved.Name">＋ @saved.Name</button>
+                        <button type="button" class="chip" data-player="@saved.Name">
+                            <span class="color-dot" style="background:@saved.Color"></span> @saved.Name
+                        </button>
                     }
                 </div>
             </div>
@@ -49,7 +62,7 @@
             </datalist>
         }
         <div id="playerList" class="player-list">
-            @{ var players = Model.Players.Count > 0 ? Model.Players : new List<string> { "", "" }; }
+            @{ var players = Model.Players.Count > 0 ? Model.Players : new List<string> { "" }; }
             @foreach (var player in players)
             {
                 <div class="player-row">
@@ -143,9 +156,37 @@
             munchkinConfig.style.display = moduleSelect.value === 'munchkin' ? '' : 'none';
             targetField.style.display = hasTarget.checked ? '' : 'none';
         }
-        moduleSelect.addEventListener('change', syncVisibility);
+        moduleSelect.addEventListener('change', () => { presetSelect.value = ''; syncVisibility(); });
         hasTarget.addEventListener('change', syncVisibility);
         syncVisibility();
+
+        // Preset-Auswahl: Modul + Konfiguration (und ggf. Name) übernehmen, Spieler bleiben erhalten
+        const PRESETS = @Html.Raw(Model.PresetsJson);
+        const presetSelect = document.getElementById('presetSelect');
+        presetSelect.addEventListener('change', () => {
+            const preset = PRESETS.find(p => p.key === presetSelect.value);
+            if (!preset) return;
+            moduleSelect.value = preset.moduleKey;
+            const nameInput = document.getElementById('Name');
+            if (!nameInput.value.trim() || PRESETS.some(p => p.name === nameInput.value)) {
+                nameInput.value = preset.name;
+            }
+            const c = preset.config || {};
+            if (preset.moduleKey === 'counter') {
+                document.getElementById('StartScore').value = c.startScore ?? 0;
+                document.getElementById('Step').value = c.step ?? 1;
+                hasTarget.checked = c.targetScore !== undefined && c.targetScore !== null;
+                document.getElementById('TargetScore').value = c.targetScore ?? 0;
+                document.getElementById('LowestWins').checked = !!c.lowestWins;
+                document.getElementById('AllowNegative').checked = c.allowNegative !== false;
+                document.getElementById('UseRounds').checked = !!c.useRounds;
+            } else if (preset.moduleKey === 'qwixx') {
+                document.getElementById('QwixxVariant').value = c.variant || 'classic';
+            } else if (preset.moduleKey === 'munchkin') {
+                document.getElementById('MunchkinTrackHealth').checked = !!c.trackHealth;
+            }
+            syncVisibility();
+        });
 
         // Spielerliste
         const playerList = document.getElementById('playerList');
