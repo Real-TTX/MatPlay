@@ -1,17 +1,21 @@
 using System.Text.Json;
+using MatPlay.Data;
 using MatPlay.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace MatPlay.Pages.Games;
 
-public class CreateModel(GameService games) : PageModel
+public class CreateModel(GameService games, SavedPlayerService savedPlayers) : PageModel
 {
     [BindProperty(SupportsGet = true)] public string? Preset { get; set; }
 
     [BindProperty] public string Name { get; set; } = "";
     [BindProperty] public string ModuleKey { get; set; } = "counter";
     [BindProperty] public List<string> Players { get; set; } = [];
+    [BindProperty] public bool SavePlayers { get; set; } = true;
+    public List<SavedPlayer> SavedPlayerList { get; private set; } = [];
 
     // Counter-Konfiguration
     [BindProperty] public int StartScore { get; set; }
@@ -30,8 +34,9 @@ public class CreateModel(GameService games) : PageModel
 
     public string? Error { get; private set; }
 
-    public void OnGet()
+    public async Task OnGetAsync()
     {
+        await LoadSavedPlayersAsync();
         var preset = Preset != null ? ModuleRegistry.GetPreset(Preset) : null;
         if (preset == null) return;
 
@@ -59,6 +64,7 @@ public class CreateModel(GameService games) : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        await LoadSavedPlayersAsync();
         var playerNames = Players.Where(p => !string.IsNullOrWhiteSpace(p)).ToList();
         if (string.IsNullOrWhiteSpace(Name))
         {
@@ -92,7 +98,13 @@ public class CreateModel(GameService games) : PageModel
             _ => "{}",
         };
 
-        var game = await games.CreateAsync(Name.Trim(), ModuleKey, configJson, playerNames);
+        var game = await games.CreateAsync(Name.Trim(), ModuleKey, configJson, playerNames, SavePlayers);
         return Redirect($"/play/{game.ShareToken}");
     }
+
+    private async Task LoadSavedPlayersAsync() =>
+        SavedPlayerList = await savedPlayers.QueryMine()
+            .OrderByDescending(p => p.LastUsedDate)
+            .Take(24)
+            .ToListAsync();
 }

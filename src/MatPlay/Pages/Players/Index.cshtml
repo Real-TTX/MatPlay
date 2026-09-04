@@ -1,0 +1,70 @@
+@page "/players"
+@model MatPlay.Pages.Players.IndexModel
+@using MatPlay.Pages.Shared.Controls
+@{
+    ViewData["Title"] = "Spieler";
+    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Spieler", null) };
+}
+
+<partial name="Controls/_ListToolbar" model="@(new ListToolbarModel
+{
+    Id = "playersToolbar",
+    Action = "/players",
+    Search = Model.Q,
+    SearchPlaceholder = "Spieler suchen …",
+    SortOptions = [("", "Zuletzt gespielt"), ("name", "Name")],
+    Sort = Model.Sort,
+})" />
+
+<form method="post" asp-page-handler="delete">
+    <input type="hidden" name="q" value="@Model.Q" />
+    <input type="hidden" name="sort" value="@Model.Sort" />
+    <input type="hidden" name="p" value="@Model.P" />
+
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+            <tr>
+                <th class="col-check"></th>
+                <th>Name</th>
+                <th>Spiele</th>
+                <th class="col-hide-mobile">Zuletzt gespielt</th>
+                <th class="col-actions"></th>
+            </tr>
+            </thead>
+            <tbody>
+            @if (Model.Items.Count == 0)
+            {
+                <tr><td colspan="5" class="table-empty">Noch keine gespeicherten Spieler – beim Erstellen eines Spiels werden sie automatisch angelegt. 🎲</td></tr>
+            }
+            @foreach (var player in Model.Items)
+            {
+                <tr>
+                    <td class="col-check"><input type="checkbox" name="selected" value="@player.Id" aria-label="@player.Name auswählen" /></td>
+                    <td><a class="table-link" href="/players/edit/@player.Id">🧑‍🤝‍🧑 @player.Name</a></td>
+                    <td>@(Model.GameCounts.GetValueOrDefault(player.Id))</td>
+                    <td class="col-hide-mobile">@player.LastUsedDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                    <td class="col-actions">
+                        <a class="icon-btn" href="/players/edit/@player.Id" title="Details & Historie">✏️</a>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <partial name="Controls/_Pagination" model="@(new PaginationModel
+    {
+        Id = "playersPagination",
+        Page = Model.P,
+        TotalPages = Model.TotalPages,
+        UrlFor = Model.UrlForPage,
+    })" />
+
+    <div class="action-bar">
+        <a class="btn btn-primary" href="/players/create">＋ Neuer Spieler</a>
+        <span class="action-gap"></span>
+        <button type="submit" class="btn btn-danger"
+                onclick="return confirm('Ausgewählte Spieler wirklich löschen? Die Spiel-Historie bleibt erhalten.')">🗑 Löschen</button>
+    </div>
+</form>

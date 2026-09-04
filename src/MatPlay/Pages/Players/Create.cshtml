@@ -1,0 +1,22 @@
+@page "/players/create"
+@model MatPlay.Pages.Players.CreateModel
+@{
+    ViewData["Title"] = "Neuer Spieler";
+    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Spieler", "/players"), ("Neu", null) };
+}
+
+@if (Model.Error != null)
+{
+    <div class="alert alert-error">@Model.Error</div>
+}
+
+<form method="post" class="form">
+    <label class="form-field">
+        <span>Name</span>
+        <input asp-for="Name" required maxlength="40" autofocus />
+    </label>
+    <div class="action-bar">
+        <button type="submit" class="btn btn-primary">💾 Speichern</button>
+        <a class="btn btn-secondary" href="/players">‹ Zurück</a>
+    </div>
+</form>

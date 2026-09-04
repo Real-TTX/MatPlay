@@ -30,17 +30,39 @@
 
     <fieldset class="form-section">
         <legend>Spieler</legend>
+        @if (Model.SavedPlayerList.Count > 0)
+        {
+            <div class="chip-box">
+                <span class="form-hint">Gespeicherte Spieler antippen:</span>
+                <div class="chip-row" id="savedPlayerChips">
+                    @foreach (var saved in Model.SavedPlayerList)
+                    {
+                        <button type="button" class="chip" data-player="@saved.Name">＋ @saved.Name</button>
+                    }
+                </div>
+            </div>
+            <datalist id="savedPlayersList">
+                @foreach (var saved in Model.SavedPlayerList)
+                {
+                    <option value="@saved.Name"></option>
+                }
+            </datalist>
+        }
         <div id="playerList" class="player-list">
             @{ var players = Model.Players.Count > 0 ? Model.Players : new List<string> { "", "" }; }
             @foreach (var player in players)
             {
                 <div class="player-row">
-                    <input type="text" name="Players" value="@player" placeholder="Spielername" maxlength="40" />
+                    <input type="text" name="Players" value="@player" placeholder="Spielername" maxlength="40" list="savedPlayersList" />
                     <button type="button" class="icon-btn remove-player" title="Entfernen">✖</button>
                 </div>
             }
         </div>
         <button type="button" class="btn btn-secondary btn-sm" id="addPlayer">＋ Spieler hinzufügen</button>
+        <label class="form-check">
+            <input asp-for="SavePlayers" type="checkbox" />
+            <span>Neue Spieler automatisch speichern (unter „Spieler" verwaltbar)</span>
+        </label>
     </fieldset>
 
     <fieldset class="form-section" id="qwixxConfig" data-module="qwixx">
@@ -127,16 +149,38 @@
 
         // Spielerliste
         const playerList = document.getElementById('playerList');
-        document.getElementById('addPlayer').addEventListener('click', () => {
+        function addPlayerRow(value) {
             const row = document.createElement('div');
             row.className = 'player-row';
-            row.innerHTML = '<input type="text" name="Players" placeholder="Spielername" maxlength="40" />' +
+            row.innerHTML = '<input type="text" name="Players" placeholder="Spielername" maxlength="40" list="savedPlayersList" />' +
                 '<button type="button" class="icon-btn remove-player" title="Entfernen">✖</button>';
+            const input = row.querySelector('input');
+            input.value = value || '';
             playerList.appendChild(row);
-            row.querySelector('input').focus();
-        });
+            return input;
+        }
+        document.getElementById('addPlayer').addEventListener('click', () => addPlayerRow().focus());
         playerList.addEventListener('click', e => {
             if (e.target.closest('.remove-player')) e.target.closest('.player-row').remove();
         });
+
+        // Vorauswahl-Chips: gespeicherten Spieler in freie Zeile eintragen
+        const chips = document.getElementById('savedPlayerChips');
+        if (chips) {
+            const names = () => [...playerList.querySelectorAll('input')].map(i => i.value.trim().toLowerCase());
+            const syncChips = () => chips.querySelectorAll('.chip').forEach(c =>
+                c.classList.toggle('used', names().includes(c.dataset.player.toLowerCase())));
+            chips.addEventListener('click', e => {
+                const chip = e.target.closest('.chip');
+                if (!chip || chip.classList.contains('used')) return;
+                const empty = [...playerList.querySelectorAll('input')].find(i => !i.value.trim());
+                if (empty) empty.value = chip.dataset.player;
+                else addPlayerRow(chip.dataset.player);
+                syncChips();
+            });
+            playerList.addEventListener('input', syncChips);
+            playerList.addEventListener('click', () => setTimeout(syncChips, 0));
+            syncChips();
+        }
     </script>
 }

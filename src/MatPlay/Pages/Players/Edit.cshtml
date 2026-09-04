@@ -1,0 +1,61 @@
+@page "/players/edit/{id:long}"
+@model MatPlay.Pages.Players.EditModel
+@{
+    ViewData["Title"] = "Spieler bearbeiten";
+    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Spieler", "/players"), (Model.Target?.Name ?? "Bearbeiten", null) };
+}
+
+@if (Model.Error != null)
+{
+    <div class="alert alert-error">@Model.Error</div>
+}
+
+<form method="post" class="form">
+    <label class="form-field">
+        <span>Name</span>
+        <input asp-for="Name" required maxlength="40" />
+    </label>
+    <div class="action-bar">
+        <button type="submit" class="btn btn-primary">💾 Speichern</button>
+        <a class="btn btn-secondary" href="/players">‹ Zurück</a>
+        <span class="action-gap"></span>
+        <button type="submit" asp-page-handler="delete" class="btn btn-danger"
+                onclick="return confirm('Diesen Spieler wirklich löschen? Die Spiel-Historie bleibt erhalten.')">🗑 Löschen</button>
+    </div>
+</form>
+
+<section class="player-history">
+    <h3>🎮 Gespielte Spiele (@Model.Games.Count)</h3>
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Spiel</th>
+                <th class="col-hide-mobile">Modul</th>
+                <th>Status</th>
+                <th class="col-hide-mobile">Zuletzt aktiv</th>
+            </tr>
+            </thead>
+            <tbody>
+            @if (Model.Games.Count == 0)
+            {
+                <tr><td colspan="4" class="table-empty">Noch keine Spiele mit diesem Spieler.</td></tr>
+            }
+            @foreach (var game in Model.Games)
+            {
+                var module = ModuleRegistry.GetModule(game.ModuleKey);
+                <tr>
+                    <td><a class="table-link" href="/play/@game.ShareToken">@(module?.Icon ?? "🎮") @game.Name</a></td>
+                    <td class="col-hide-mobile">@(module?.Name ?? game.ModuleKey)</td>
+                    <td>
+                        <span class="badge @(game.Status == GameStatus.Running ? "badge-live" : "badge-done")">
+                            @(game.Status == GameStatus.Running ? "Läuft" : "Beendet")
+                        </span>
+                    </td>
+                    <td class="col-hide-mobile">@game.UpdateDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>

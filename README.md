@@ -15,6 +15,8 @@ Als PWA installierbar, mit Wake-Lock („Display bleibt an") am Spieltisch.
 - 🔗 **Link-Freigabe** – jedes Spiel hat einen Share-Link, alle Geräte synchronisieren live
 - 🔍 **Spielkatalog** – Startseite mit Suche und Paging, bereit für viele weitere Spiele
 - ⭐ **Favoriten** – angemeldete Benutzer markieren Lieblingsspiele, die zuerst erscheinen
+- 🧑‍🤝‍🧑 **Spielerprofile** – Mitspieler werden (abschaltbar) automatisch gespeichert, sind beim
+  neuen Spiel als Vorauswahl antippbar und zeigen ihre Spiel-Historie; verwaltbar unter „Spieler"
 - 👤 **Anonym spielbar** – Spiele erstellen ohne Konto; lokale Anmeldung mit Rollen (Admin, User, Anonym)
 - 📱 **PWA** – installierbar, Offline-Shell, Screen Wake Lock (Android & iOS ≥ 16.4)
 - 🌗 **Themes** – System / Hell / Dunkel, Neon-Gaming-Look

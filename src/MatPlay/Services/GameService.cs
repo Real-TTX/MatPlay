@@ -3,9 +3,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MatPlay.Services;
 
-public class GameService(AppDbContext db, CurrentContext current)
+public class GameService(AppDbContext db, CurrentContext current, SavedPlayerService savedPlayers)
 {
-    public async Task<Game> CreateAsync(string name, string moduleKey, string configJson, IEnumerable<string> playerNames)
+    public async Task<Game> CreateAsync(string name, string moduleKey, string configJson,
+        IEnumerable<string> playerNames, bool savePlayers = false)
     {
         var game = new Game
         {
@@ -21,18 +22,25 @@ public class GameService(AppDbContext db, CurrentContext current)
         await db.SaveChangesAsync();
 
         var order = 0;
+        var created = new List<GamePlayer>();
         foreach (var playerName in playerNames.Where(n => !string.IsNullOrWhiteSpace(n)))
         {
-            db.GamePlayers.Add(new GamePlayer
+            var player = new GamePlayer
             {
                 GameId = game.Id,
                 Name = playerName.Trim(),
                 SortOrder = order++,
                 CreateUserId = current.UserId,
                 UpdateUserId = current.UserId,
-            });
+            };
+            db.GamePlayers.Add(player);
+            created.Add(player);
         }
         await db.SaveChangesAsync();
+
+        // Mit Spielerprofilen verknüpfen; neue Profile nur bei aktiviertem Auto-Speichern
+        foreach (var player in created)
+            await savedPlayers.LinkAsync(player, savePlayers);
         return game;
     }
 
@@ -120,6 +128,9 @@ public class GameService(AppDbContext db, CurrentContext current)
         };
         db.GamePlayers.Add(player);
         await BumpVersionAsync(game);
+        // Nachträglich hinzugefügte Spieler mit vorhandenem Profil des Besitzers verknüpfen
+        if (IsOwner(game))
+            await savedPlayers.LinkAsync(player, createIfMissing: false);
         return player;
     }
 

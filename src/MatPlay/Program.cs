@@ -33,6 +33,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CurrentContext>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<GameService>();
+builder.Services.AddScoped<SavedPlayerService>();
 builder.Services.AddSingleton(new AppConfigService(dataDir));
 builder.Services.AddSingleton(new AppInfo(appVersion));
 
@@ -69,13 +70,37 @@ using (var scope = app.Services.CreateScope())
         CREATE UNIQUE INDEX IF NOT EXISTS "IX_UserFavorite_UserId_PresetKey"
             ON "UserFavorite" ("UserId", "PresetKey");
         """);
-    try
+    db.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS "SavedPlayer" (
+            "Id" INTEGER NOT NULL CONSTRAINT "PK_SavedPlayer" PRIMARY KEY AUTOINCREMENT,
+            "CreateDate" TEXT NOT NULL,
+            "CreateUserId" INTEGER NULL,
+            "UpdateDate" TEXT NOT NULL,
+            "UpdateUserId" INTEGER NULL,
+            "UpdateState" INTEGER NOT NULL,
+            "OwnerUserId" INTEGER NULL,
+            "OwnerSessionId" INTEGER NULL,
+            "Name" TEXT NOT NULL,
+            "LastUsedDate" TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS "IX_SavedPlayer_OwnerUserId" ON "SavedPlayer" ("OwnerUserId");
+        CREATE INDEX IF NOT EXISTS "IX_SavedPlayer_OwnerSessionId" ON "SavedPlayer" ("OwnerSessionId");
+        """);
+    // Spalten-Upgrades: ALTER schlägt fehl, wenn die Spalte schon existiert
+    foreach (var alter in new[]
     {
-        db.Database.ExecuteSqlRaw("""ALTER TABLE "User" ADD COLUMN "MustChangePassword" INTEGER NOT NULL DEFAULT 0;""");
-    }
-    catch (Microsoft.Data.Sqlite.SqliteException)
+        """ALTER TABLE "User" ADD COLUMN "MustChangePassword" INTEGER NOT NULL DEFAULT 0;""",
+        """ALTER TABLE "GamePlayer" ADD COLUMN "SavedPlayerId" INTEGER NULL;""",
+    })
     {
-        // Spalte existiert bereits
+        try
+        {
+            db.Database.ExecuteSqlRaw(alter);
+        }
+        catch (Microsoft.Data.Sqlite.SqliteException)
+        {
+            // Spalte existiert bereits
+        }
     }
     if (!db.Users.Any())
     {
