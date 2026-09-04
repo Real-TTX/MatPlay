@@ -241,6 +241,20 @@ public static class ModuleRegistry
         },
         new GamePreset
         {
+            Key = "flip7",
+            Name = "Flip 7",
+            Description = "Push your luck! Rundenpunkte sammeln – wer zuerst 200 erreicht, gewinnt.",
+            Icon = "7️⃣",
+            Accent = "cyan",
+            ModuleKey = "counter",
+            ConfigJson = JsonSerializer.Serialize(new CounterConfig
+            {
+                StartScore = 0, Step = 1, TargetScore = 200, LowestWins = false,
+                AllowNegative = false, UseRounds = true,
+            }, JsonOpts),
+        },
+        new GamePreset
+        {
             Key = "frantic",
             Name = "Frantic",
             Description = "Minuspunkte pro Runde – bei 154 (kurz 137, lang 179) ist Schluss, wenigste Punkte gewinnen.",

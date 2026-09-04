@@ -7,13 +7,13 @@ Als PWA installierbar, mit Wake-Lock („Display bleibt an") am Spieltisch.
 ## Features
 
 - 🎯 **Punktezähler** – generisch konfigurierbar (Startpunkte, Schrittweite, Ziel, Runden)
-- 🃏 **Presets** – z.B. „20 Ab", „Phase 10 (Punkte)" und „Frantic" als vorkonfigurierte Zähler
+- 🃏 **Presets** – z.B. „20 Ab", „Phase 10 (Punkte)", „Frantic" und „Flip 7" als vorkonfigurierte Zähler
 - 🎲 **Qwixx** – digitaler Zettel mit Farbreihen, Schlössern und Fehlwürfen;
   inkl. „Qwixx gemixxt"-Varianten (wilde Zahlen / Farbsegmente), pro Spiel frisch ausgewürfelt
 - 🎰 **Kniffel** – kompletter Block (oberer/unterer Teil), Bonus wird automatisch gerechnet
 - ⚔️ **Munchkin & Munchkin Quest** – Level, Boni und Kampfkraft, optional mit Lebenspunkten
 - 🔗 **Link-Freigabe** – jedes Spiel hat einen Share-Link, alle Geräte synchronisieren live
-- 🔍 **Spielkatalog** – Startseite mit Suche und Paging, bereit für viele weitere Spiele (Flip 7 & Co.)
+- 🔍 **Spielkatalog** – Startseite mit Suche und Paging, bereit für viele weitere Spiele
 - ⭐ **Favoriten** – angemeldete Benutzer markieren Lieblingsspiele, die zuerst erscheinen
 - 👤 **Anonym spielbar** – Spiele erstellen ohne Konto; lokale Anmeldung mit Rollen (Admin, User, Anonym)
 - 📱 **PWA** – installierbar, Offline-Shell, Screen Wake Lock (Android & iOS ≥ 16.4)
