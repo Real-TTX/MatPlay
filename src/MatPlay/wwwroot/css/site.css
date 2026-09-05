@@ -68,6 +68,14 @@ body {
 
 a { color: var(--primary); text-decoration: none; }
 
+/* iOS: Doppeltipp-Zoom auf Bedienelementen unterbinden (Pinch-Zoom bleibt möglich) –
+   sonst zoomt das iPhone beim schnellen Punkte-Tippen */
+a, button, input, select, textarea, label,
+.counter-card, .munchkin-card, .qwixx-row, .qwixx-misses, .kniffel-row,
+.wizard-form, .tab-bar, .chip-row, .pin-bar, .play-toolbar, .mp-select {
+    touch-action: manipulation;
+}
+
 /* ============ Layout ============ */
 /* vh-Fallbacks vor dvh: ältere iPad/iOS-Safari kennen dvh nicht */
 .app { display: flex; min-height: 100vh; min-height: 100dvh; }
