@@ -1,5 +1,5 @@
 // MatPlay Service Worker – Shell-Caching für PWA
-const CACHE = 'matplay-v2';
+const CACHE = 'matplay-v3';
 const SHELL = [
     '/css/site.css',
     '/js/site.js',
@@ -31,11 +31,12 @@ self.addEventListener('fetch', e => {
     if (e.request.method !== 'GET' || url.origin !== location.origin) return;
     if (url.pathname.startsWith('/api/')) return; // Spielstand immer live
 
-    // Statische Assets: Cache-first, Seiten: Network-first mit Cache-Fallback
+    // Statische Assets: Cache-first mit exakter URL (inkl. ?v=-Cache-Buster,
+    // sonst würden CSS/JS-Updates in installierten PWAs nie ankommen)
     const isStatic = /\.(css|js|png|svg|webmanifest|woff2?)$/.test(url.pathname);
     if (isStatic) {
         e.respondWith(
-            caches.match(e.request, { ignoreSearch: true }).then(hit => hit ||
+            caches.match(e.request).then(hit => hit ||
                 fetch(e.request).then(res => {
                     const copy = res.clone();
                     caches.open(CACHE).then(c => c.put(e.request, copy));

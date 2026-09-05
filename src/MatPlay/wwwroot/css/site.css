@@ -77,7 +77,8 @@ a { color: var(--primary); text-decoration: none; }
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    padding: 18px 14px;
+    /* Safe-Areas: iOS-PWA zieht sich unter Statusleiste/Home-Indicator */
+    padding: calc(18px + env(safe-area-inset-top, 0px)) 14px calc(18px + env(safe-area-inset-bottom, 0px));
     background: var(--panel);
     border-right: 1px solid var(--border);
     position: -webkit-sticky;
@@ -147,16 +148,18 @@ a { color: var(--primary); text-decoration: none; }
 .version { font-size: 0.7rem; color: var(--text-dim); text-align: center; }
 
 .content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.content-header { padding: 22px 28px 0; }
+.content-header { padding: calc(22px + env(safe-area-inset-top, 0px)) 28px 0; }
 .content-header h1 { margin: 0 0 6px; font-size: 1.6rem; letter-spacing: 0.3px; }
 .breadcrumb { font-size: 0.85rem; color: var(--text-dim); display: flex; gap: 6px; flex-wrap: wrap; }
 .crumb-sep { color: var(--text-dim); }
 .crumb-current { color: var(--text); font-weight: 600; }
-.content-body { padding: 18px 28px 40px; }
+.content-body { padding: 18px 28px calc(40px + env(safe-area-inset-bottom, 0px)); }
 
 /* Mobile */
 .menu-toggle {
-    display: none; position: fixed; top: 12px; left: 12px; z-index: 50;
+    display: none; position: fixed; z-index: 50;
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    left: calc(12px + env(safe-area-inset-left, 0px));
     width: 42px; height: 42px; border-radius: var(--radius-sm);
     background: var(--panel); border: 1px solid var(--border);
     cursor: pointer; flex-direction: column; justify-content: center; align-items: center; gap: 5px;
@@ -178,8 +181,8 @@ a { color: var(--primary); text-decoration: none; }
     }
     .app.menu-open .sidebar { transform: translateX(0); }
     .app.menu-open .sidebar-backdrop { display: block; }
-    .content-header { padding: 16px 16px 0 64px; }
-    .content-body { padding: 14px 16px 32px; }
+    .content-header { padding: calc(16px + env(safe-area-inset-top, 0px)) 16px 0 64px; }
+    .content-body { padding: 14px 16px calc(32px + env(safe-area-inset-bottom, 0px)); }
     .col-hide-mobile { display: none; }
 }
 
@@ -372,8 +375,9 @@ a { color: var(--primary); text-decoration: none; }
     }
     .mp-select.open .mp-select-panel {
         position: fixed; z-index: 91; left: 12px; right: 12px;
-        top: 7vh; top: 7dvh;
-        max-height: 82vh; max-height: 82dvh;
+        top: calc(7vh + env(safe-area-inset-top, 0px));
+        top: calc(7dvh + env(safe-area-inset-top, 0px));
+        max-height: 78vh; max-height: 78dvh;
     }
     .mp-select-close { display: inline-flex; }
 }
