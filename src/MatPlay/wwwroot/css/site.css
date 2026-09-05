@@ -181,6 +181,8 @@ a { color: var(--primary); text-decoration: none; }
     }
     .app.menu-open .sidebar { transform: translateX(0); }
     .app.menu-open .sidebar-backdrop { display: block; }
+    /* Bei offenem Menü ist der Burger überflüssig und würde das Logo verdecken */
+    .app.menu-open .menu-toggle { display: none; }
     .content-header { padding: calc(16px + env(safe-area-inset-top, 0px)) 16px 0 64px; }
     .content-body { padding: 14px 16px calc(32px + env(safe-area-inset-bottom, 0px)); }
     .col-hide-mobile { display: none; }
