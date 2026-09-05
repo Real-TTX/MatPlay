@@ -43,13 +43,18 @@
         const winners = winnerIds(state, totalMap);
 
         board.innerHTML = '';
-        for (const player of state.players) {
+        // Gepinnte Spieler zuerst (Reihenfolge sonst stabil)
+        const players = [...state.players].sort((a, b) =>
+            Number(MatPlayCore.isPinned(b.id)) - Number(MatPlayCore.isPinned(a.id)));
+        for (const player of players) {
             const total = totalMap.get(player.id);
             const winner = winners.has(player.id);
             const leader = state.players.length > 1 && total === best && state.scores.length > 0;
+            const canEdit = MatPlayCore.editable(player.id);
 
             const card = document.createElement('div');
-            card.className = 'counter-card' + (winner ? ' winner' : leader ? ' leader' : '');
+            card.className = 'counter-card' + (winner ? ' winner' : leader ? ' leader' : '')
+                + (canEdit ? '' : ' readonly');
 
             const name = document.createElement('div');
             name.className = 'counter-name';
@@ -66,7 +71,7 @@
             totalEl.textContent = total;
             card.appendChild(totalEl);
 
-            if (running) {
+            if (running && canEdit) {
                 if (cfg.useRounds) {
                     // Rundenmodus: Punkte am Rundenende eintragen (z.B. Flip 7, Frantic)
                     const nextRound = state.scores.filter(s => s.playerId === player.id).length + 1;
@@ -111,6 +116,28 @@
         }
 
         renderRounds(state);
+        renderLog(state);
+    }
+
+    function renderLog(state) {
+        const section = document.getElementById('logHistory');
+        const list = document.getElementById('logList');
+        if (!state.scores.length) { section.hidden = true; return; }
+        section.hidden = false;
+        const names = new Map(state.players.map(p => [p.id, p.name]));
+        list.innerHTML = '';
+        for (const entry of [...state.scores].reverse().slice(0, 30)) {
+            const li = document.createElement('li');
+            const time = entry.date
+                ? new Date(entry.date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+                : '';
+            const value = entry.value > 0 ? `+${entry.value}` : `${entry.value}`;
+            li.innerHTML = `<span class="log-time">${time}</span> ` +
+                `<b>${escapeHtml(names.get(entry.playerId) || '?')}</b> ` +
+                `<span class="log-value ${entry.value >= 0 ? 'pos' : 'neg'}">${value}</span>` +
+                (entry.round > 0 ? ` <span class="log-round">Runde ${entry.round}</span>` : '');
+            list.appendChild(li);
+        }
     }
 
     function addScore(state, player, value, currentTotal) {
@@ -174,10 +201,6 @@
     }
 
     document.getElementById('undoBtn').addEventListener('click', () => MatPlayCore.action('/undo', {}));
-    document.getElementById('addPlayerBtn').addEventListener('click', () => {
-        const name = prompt('Name des neuen Spielers:');
-        if (name && name.trim()) MatPlayCore.action('/player', { name: name.trim() });
-    });
 
     MatPlayCore.init(render);
 })();

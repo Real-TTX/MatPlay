@@ -11,11 +11,30 @@
     <span class="play-toolbar-spacer"></span>
     <button type="button" class="btn btn-secondary btn-sm" id="shareBtn" title="Link teilen">🔗 Teilen</button>
     <button type="button" class="btn btn-secondary btn-sm" id="wakeLockBtn" title="Bildschirm anlassen">📱 Display an</button>
+    @if (Model.HelpPreset != null)
+    {
+        <button type="button" class="btn btn-secondary btn-sm" id="rulesBtn" title="Kurzregeln anzeigen">❓ Hilfe</button>
+    }
     @if (Model.IsOwner)
     {
         <a class="btn btn-secondary btn-sm" href="/games/edit/@Model.Game.Id" title="Bearbeiten">✏️</a>
     }
 </div>
+
+@if (Model.HelpPreset != null)
+{
+    <section class="rules-panel" id="rulesPanel" hidden>
+        <h3>@Model.HelpPreset.Icon Kurzregeln: @Model.HelpPreset.Name</h3>
+        <ul>
+            @foreach (var rule in Model.HelpPreset.Rules)
+            {
+                <li>@rule</li>
+            }
+        </ul>
+    </section>
+}
+
+<div class="pin-bar" id="pinBar" hidden></div>
 
 <div id="playRoot"
      data-token="@Model.Game.ShareToken"
@@ -24,6 +43,15 @@
 </div>
 
 @section Scripts {
+    <script>
+        const rulesBtn = document.getElementById('rulesBtn');
+        if (rulesBtn) {
+            rulesBtn.addEventListener('click', () => {
+                const panel = document.getElementById('rulesPanel');
+                panel.hidden = !panel.hidden;
+            });
+        }
+    </script>
     <script src="/js/play-core.js" asp-append-version="true"></script>
     <script src="/js/play-@(Model.Game.ModuleKey).js" asp-append-version="true"></script>
 }

@@ -69,7 +69,8 @@ body {
 a { color: var(--primary); text-decoration: none; }
 
 /* ============ Layout ============ */
-.app { display: flex; min-height: 100dvh; }
+/* vh-Fallbacks vor dvh: ältere iPad/iOS-Safari kennen dvh nicht */
+.app { display: flex; min-height: 100vh; min-height: 100dvh; }
 
 .sidebar {
     width: var(--sidebar-w);
@@ -79,8 +80,10 @@ a { color: var(--primary); text-decoration: none; }
     padding: 18px 14px;
     background: var(--panel);
     border-right: 1px solid var(--border);
+    position: -webkit-sticky;
     position: sticky;
     top: 0;
+    height: 100vh;
     height: 100dvh;
     overflow-y: auto;
     z-index: 30;
@@ -368,8 +371,9 @@ a { color: var(--primary); text-decoration: none; }
         background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(2px);
     }
     .mp-select.open .mp-select-panel {
-        position: fixed; z-index: 91; left: 12px; right: 12px; top: 7dvh;
-        max-height: 82dvh;
+        position: fixed; z-index: 91; left: 12px; right: 12px;
+        top: 7vh; top: 7dvh;
+        max-height: 82vh; max-height: 82dvh;
     }
     .mp-select-close { display: inline-flex; }
 }
@@ -516,6 +520,42 @@ a { color: var(--primary); text-decoration: none; }
 #wakeLockBtn.active { border-color: var(--neon-lime); color: var(--neon-lime); box-shadow: 0 0 10px rgba(163, 255, 18, 0.35); }
 
 .play-actions { display: flex; gap: 10px; margin: 18px 0; flex-wrap: wrap; }
+
+/* Kurzregeln-Panel (Hilfe-Button) */
+.rules-panel {
+    margin-bottom: 16px; padding: 14px 18px;
+    background: var(--panel); border: 1px dashed var(--primary); border-radius: var(--radius);
+}
+.rules-panel h3 { margin: 0 0 8px; font-size: 1rem; color: var(--primary); }
+.rules-panel ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 5px; }
+.rules-panel li { font-size: 0.92rem; }
+
+/* Spieler-Pinning (pro Gerät) */
+.pin-bar {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 10px 14px; margin-bottom: 16px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.pin-label { font-size: 0.82rem; font-weight: 700; color: var(--text-dim); }
+.pin-bar .chip.pinned {
+    border-color: var(--primary); color: var(--primary);
+    box-shadow: var(--glow-primary);
+}
+.counter-card.readonly { opacity: 0.6; }
+
+/* Verlauf */
+.log-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.log-list li {
+    padding: 8px 14px; border-bottom: 1px solid var(--border);
+    background: var(--panel); font-size: 0.9rem;
+}
+.log-list li:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+.log-list li:last-child { border-bottom: none; border-radius: 0 0 var(--radius) var(--radius); }
+.log-time { color: var(--text-dim); font-size: 0.8rem; margin-right: 6px; font-variant-numeric: tabular-nums; }
+.log-value { font-weight: 800; }
+.log-value.pos { color: var(--neon-lime); }
+.log-value.neg { color: var(--danger); }
+.log-round { color: var(--text-dim); font-size: 0.8rem; }
 
 /* Counter-Modul */
 .counter-board {

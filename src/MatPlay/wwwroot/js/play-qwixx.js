@@ -55,8 +55,10 @@
 
     function render(state) {
         if (!state.players.length) { pad.innerHTML = '<p class="form-hint">Noch keine Spieler.</p>'; return; }
-        if (!state.players.some(p => p.id === activePlayerId)) activePlayerId = state.players[0].id;
-        const running = state.status === 0;
+        if (!state.players.some(p => p.id === activePlayerId)) {
+            const pinned = state.players.find(p => MatPlayCore.isPinned(p.id));
+            activePlayerId = (pinned ?? state.players[0]).id;
+        }
         const rows = gameRows(state);
 
         // Spieler-Tabs
@@ -71,6 +73,8 @@
         }
 
         const player = state.players.find(p => p.id === activePlayerId);
+        // Bearbeiten nur für an diesem Gerät gepinnte Spieler (ohne Pins: alle)
+        const running = state.status === 0 && MatPlayCore.editable(player.id);
         const ps = playerState(rows, player);
         const locked = lockedRows(state);
 
@@ -178,11 +182,6 @@
         div.textContent = text;
         return div.innerHTML;
     }
-
-    document.getElementById('addPlayerBtn').addEventListener('click', () => {
-        const name = prompt('Name des neuen Spielers:');
-        if (name && name.trim()) MatPlayCore.action('/player', { name: name.trim() });
-    });
 
     MatPlayCore.init(render);
 })();

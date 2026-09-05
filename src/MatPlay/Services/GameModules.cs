@@ -132,6 +132,8 @@ public class GamePreset
     public required string Accent { get; init; }
     public required string ModuleKey { get; init; }
     public string ConfigJson { get; init; } = "{}";
+    /// <summary>Kurzregeln/Spickzettel, angezeigt über den Hilfe-Button im Spiel.</summary>
+    public string[] Rules { get; init; } = [];
 }
 
 /// <summary>Ein Spielmodul: rendert Play-UI über ein Partial und liefert Standard-Konfiguration.</summary>
@@ -225,6 +227,14 @@ public static class ModuleRegistry
             {
                 StartScore = 20, Step = 1, TargetScore = 0, LowestWins = true, AllowNegative = false,
             }, JsonOpts),
+            Rules =
+            [
+                "Jeder startet mit 20 Punkten, Herz ist immer Trumpf.",
+                "Pro gemachtem Stich wird 1 Punkt abgezogen – wer zuerst auf 0 ist, gewinnt.",
+                "Wer keinen Stich macht, bekommt 5 Punkte dazu.",
+                "Herz blind: Vor dem Kartenaufnehmen angesagt – die Punkte zählen doppelt.",
+                "Achtung: Es gibt viele regionale Varianten – einigt euch vor der ersten Runde. 😉",
+            ],
         },
         new GamePreset
         {
@@ -238,6 +248,13 @@ public static class ModuleRegistry
             {
                 StartScore = 0, Step = 5, LowestWins = true, AllowNegative = false, UseRounds = true,
             }, JsonOpts),
+            Rules =
+            [
+                "10 Phasen in fester Reihenfolge schaffen (Zwillinge, Folgen, Farben …).",
+                "Rundenende: Restkarten der anderen zählen als Minuspunkte (hier eintragen).",
+                "Kartenwerte: 1-9 = 5 Punkte, 10-12 = 10 Punkte, Aussetzen = 15, Joker = 25.",
+                "Wer zuerst Phase 10 schafft, beendet das Spiel – bei Gleichstand entscheiden die wenigsten Punkte.",
+            ],
         },
         new GamePreset
         {
@@ -252,6 +269,14 @@ public static class ModuleRegistry
                 StartScore = 0, Step = 1, TargetScore = 200, LowestWins = false,
                 AllowNegative = false, UseRounds = true,
             }, JsonOpts),
+            Rules =
+            [
+                "Karten ziehen, solange du willst – doppelte Zahl = geplatzt, Runde zählt 0 Punkte.",
+                "Rundenpunkte = Summe deiner Zahlenkarten + Modifikatoren (+2 … +10, x2).",
+                "Flip 7: Sieben verschiedene Zahlenkarten = +15 Bonus, die Runde endet sofort.",
+                "Aktionskarten: Freeze (Spieler stoppt), Flip Three (3 Karten ziehen), Second Chance (rettet vor Doppelter).",
+                "Wer zuerst 200 Punkte erreicht, gewinnt.",
+            ],
         },
         new GamePreset
         {
@@ -266,6 +291,12 @@ public static class ModuleRegistry
                 StartScore = 0, Step = 1, TargetScore = 154, LowestWins = true,
                 AllowNegative = false, UseRounds = true,
             }, JsonOpts),
+            Rules =
+            [
+                "Karten loswerden wie bei UNO – aber mit fiesen Ereignis- und Spezialkarten.",
+                "Rundenende: Alle zählen ihre Handkarten als Minuspunkte (hier eintragen).",
+                "Spielende beim Punktelimit: kurz 137, normal 154, lang 179 – wenigste Punkte gewinnen.",
+            ],
         },
         new GamePreset
         {
@@ -275,6 +306,14 @@ public static class ModuleRegistry
             Icon = "🎲",
             Accent = "magenta",
             ModuleKey = "qwixx",
+            Rules =
+            [
+                "Summe der weißen Würfel darf JEDER ankreuzen, der aktive Spieler zusätzlich weiß + Farbe.",
+                "Kreuze nur von links nach rechts – übersprungene Zahlen sind weg.",
+                "Die letzte Zahl einer Reihe braucht mindestens 5 Kreuze davor und schließt die Reihe für alle.",
+                "Aktiver Spieler ohne Kreuz = Fehlwurf (−5, maximal 4).",
+                "Ende bei 2 geschlossenen Reihen oder 4 Fehlwürfen – Punkte je Reihe steigen mit den Kreuzen.",
+            ],
         },
         new GamePreset
         {
@@ -284,6 +323,13 @@ public static class ModuleRegistry
             Icon = "🎰",
             Accent = "lime",
             ModuleKey = "kniffel",
+            Rules =
+            [
+                "Bis zu 3 Würfe pro Zug, beliebig viele Würfel liegen lassen.",
+                "Nach dem Zug MUSS ein Feld gewählt werden – notfalls streichen (✖).",
+                "Oben ab 63 Punkten gibt es +35 Bonus (wird automatisch gerechnet).",
+                "Full House 25, Kleine Straße 30, Große Straße 40, Kniffel 50, Chance = Augensumme.",
+            ],
         },
         new GamePreset
         {
@@ -294,6 +340,12 @@ public static class ModuleRegistry
             Accent = "orange",
             ModuleKey = "munchkin",
             ConfigJson = JsonSerializer.Serialize(new MunchkinConfig(), JsonOpts),
+            Rules =
+            [
+                "Kampfkraft = Level + Boni durch Ausrüstung (hier automatisch gerechnet).",
+                "Monster besiegt: Level(s) hoch + Schätze; verloren & Weglaufen misslingt = Schlimme Dinge.",
+                "Level 9 → 10 nur durch einen Monster-Kill – wer zuerst Level 10 erreicht, gewinnt.",
+            ],
         },
         new GamePreset
         {
@@ -304,6 +356,12 @@ public static class ModuleRegistry
             Accent = "orange",
             ModuleKey = "munchkin",
             ConfigJson = JsonSerializer.Serialize(new MunchkinConfig { TrackHealth = true }, JsonOpts),
+            Rules =
+            [
+                "Jeder Munchkin startet mit 4 Lebenspunkten – bei 0 heißt es sterben & wiederauferstehen.",
+                "Kampfkraft = Level + Boni (hier automatisch gerechnet).",
+                "Level 10 erreichen reicht nicht: Zurück in die Eingangshalle und den Boss (Stufe 20) besiegen!",
+            ],
         },
         new GamePreset
         {
@@ -314,6 +372,13 @@ public static class ModuleRegistry
             Accent = "cyan",
             ModuleKey = "qwixx",
             ConfigJson = """{"variant":"mixedNumbers"}""",
+            Rules =
+            [
+                "Alle Qwixx-Grundregeln gelten weiter.",
+                "Variante B (wilde Zahlen): Zahlen sind gemischt – angekreuzt wird trotzdem nur von links nach rechts.",
+                "Variante A (Farbsegmente): Zahlen laufen auf/ab, aber die Feldfarbe bestimmt den passenden Farbwürfel.",
+                "Der Block wird hier für jedes Spiel frisch ausgewürfelt.",
+            ],
         },
     ];
 

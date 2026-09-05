@@ -10,6 +10,57 @@ const MatPlayCore = (function () {
     let renderFn = null;
     let pollTimer = null;
 
+    // ---- Spieler-Pinning: dieses Gerät bedient nur die gepinnten Spieler (lokal gespeichert) ----
+    const PIN_KEY = 'matplay-pins-' + token;
+    let pins = [];
+    try { pins = JSON.parse(localStorage.getItem(PIN_KEY) || '[]'); } catch { pins = []; }
+
+    function isPinned(playerId) { return pins.includes(playerId); }
+    function editable(playerId) { return pins.length === 0 || pins.includes(playerId); }
+    function togglePin(playerId) {
+        pins = isPinned(playerId) ? pins.filter(id => id !== playerId) : [...pins, playerId];
+        localStorage.setItem(PIN_KEY, JSON.stringify(pins));
+        renderPinBar();
+        if (renderFn && state) renderFn(state);
+    }
+    function clearPins() {
+        pins = [];
+        localStorage.setItem(PIN_KEY, '[]');
+        renderPinBar();
+        if (renderFn && state) renderFn(state);
+    }
+
+    function renderPinBar() {
+        const bar = document.getElementById('pinBar');
+        if (!bar || !state) return;
+        if (state.players.length < 2) { bar.hidden = true; return; }
+        bar.hidden = false;
+        // Verwaiste Pins entfernen (Spieler gelöscht)
+        pins = pins.filter(id => state.players.some(p => p.id === id));
+
+        bar.innerHTML = '';
+        const label = document.createElement('span');
+        label.className = 'pin-label';
+        label.textContent = '📌 Dieses Gerät bedient:';
+        bar.appendChild(label);
+        for (const player of state.players) {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'chip' + (isPinned(player.id) ? ' pinned' : '');
+            chip.textContent = player.name;
+            chip.title = isPinned(player.id) ? 'Pin entfernen' : 'Diesen Spieler an diesem Gerät bedienen';
+            chip.addEventListener('click', () => togglePin(player.id));
+            bar.appendChild(chip);
+        }
+        const all = document.createElement('button');
+        all.type = 'button';
+        all.className = 'chip' + (pins.length === 0 ? ' pinned' : '');
+        all.textContent = 'Alle';
+        all.title = 'Keine Einschränkung – alle Spieler bedienbar';
+        all.addEventListener('click', clearPins);
+        bar.appendChild(all);
+    }
+
     async function api(path, body) {
         const res = await fetch(`/api/play/${token}${path}`, body === undefined
             ? undefined
@@ -25,6 +76,7 @@ const MatPlayCore = (function () {
                 lastVersion = next.version;
                 state = next;
                 updateStatusBadge();
+                renderPinBar();
                 if (renderFn) renderFn(state);
             }
         } catch { /* offline o.ä. – nächster Poll versucht es erneut */ }
@@ -100,6 +152,8 @@ const MatPlayCore = (function () {
         api,
         action,
         refresh,
+        isPinned,
+        editable,
         get state() { return state; },
         init(render) {
             renderFn = render;

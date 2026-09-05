@@ -192,7 +192,12 @@ play.MapGet("/state", async (string token, GameService games) =>
             name = p.Name,
             state = JsonDocument.Parse(string.IsNullOrEmpty(p.StateJson) ? "{}" : p.StateJson).RootElement,
         }),
-        scores = scores.Select(e => new { id = e.Id, playerId = e.PlayerId, value = e.Value, round = e.Round }),
+        // Kind=Utc erzwingen, damit der Client die Zeit korrekt in Lokalzeit umrechnet
+        scores = scores.Select(e => new
+        {
+            id = e.Id, playerId = e.PlayerId, value = e.Value, round = e.Round,
+            date = DateTime.SpecifyKind(e.CreateDate, DateTimeKind.Utc),
+        }),
     });
 });
 
@@ -211,15 +216,6 @@ play.MapPost("/undo", async (string token, UndoRequest req, GameService games) =
     if (game == null) return Results.NotFound();
     var ok = await games.UndoLastScoreAsync(game, req.PlayerId);
     return Results.Json(new { ok, version = game.Version });
-});
-
-play.MapPost("/player", async (string token, AddPlayerRequest req, GameService games) =>
-{
-    var game = await games.GetByTokenAsync(token);
-    if (game == null) return Results.NotFound();
-    if (string.IsNullOrWhiteSpace(req.Name)) return Results.BadRequest();
-    var player = await games.AddPlayerAsync(game, req.Name);
-    return Results.Json(new { id = player.Id, version = game.Version });
 });
 
 play.MapPost("/player-state", async (string token, PlayerStateRequest req, GameService games) =>
@@ -251,7 +247,6 @@ app.Run();
 
 public record ScoreRequest(long PlayerId, int Value, int Round);
 public record UndoRequest(long? PlayerId);
-public record AddPlayerRequest(string Name);
 public record PlayerStateRequest(long PlayerId, JsonElement State);
 public record ConfigRequest(JsonElement Config);
 public record StatusRequest(int Status);

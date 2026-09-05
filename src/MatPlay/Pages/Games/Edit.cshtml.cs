@@ -75,9 +75,15 @@ public class EditModel(GameService games, AppDbContext db) : PageModel
             }, ModuleRegistry.JsonOpts);
         }
 
-        // Spieler umbenennen bzw. leere Namen = Spieler entfernen (Soft-Delete)
+        // Spieler umbenennen, leere Namen = entfernen (Soft-Delete), Id 0 = neuer Spieler
         for (var i = 0; i < PlayerIds.Count && i < PlayerNames.Count; i++)
         {
+            if (PlayerIds[i] == 0)
+            {
+                if (!string.IsNullOrWhiteSpace(PlayerNames[i]))
+                    await games.AddPlayerAsync(game, PlayerNames[i]);
+                continue;
+            }
             var player = Players.FirstOrDefault(p => p.Id == PlayerIds[i]);
             if (player == null) continue;
             if (string.IsNullOrWhiteSpace(PlayerNames[i]))

@@ -36,8 +36,8 @@
 
     <fieldset class="form-section">
         <legend>Spieler</legend>
-        <p class="form-hint">Name leeren, um einen Spieler zu entfernen. Neue Spieler können direkt im Spiel hinzugefügt werden.</p>
-        <div class="player-list">
+        <p class="form-hint">Name leeren, um einen Spieler zu entfernen.</p>
+        <div class="player-list" id="editPlayerList">
             @for (var i = 0; i < Model.Players.Count; i++)
             {
                 <div class="player-row">
@@ -46,6 +46,7 @@
                 </div>
             }
         </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="addPlayerRow">＋ Spieler hinzufügen</button>
     </fieldset>
 
     @if (Model.Game?.ModuleKey == "counter")
@@ -103,5 +104,14 @@
             hasTarget.addEventListener('change', sync);
             sync();
         }
+
+        document.getElementById('addPlayerRow').addEventListener('click', () => {
+            const row = document.createElement('div');
+            row.className = 'player-row';
+            row.innerHTML = '<input type="hidden" name="PlayerIds" value="0" />' +
+                '<input type="text" name="PlayerNames" placeholder="Neuer Spieler" maxlength="40" />';
+            document.getElementById('editPlayerList').appendChild(row);
+            row.querySelector('input[type=text]').focus();
+        });
     </script>
 }

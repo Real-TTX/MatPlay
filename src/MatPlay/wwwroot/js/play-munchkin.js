@@ -23,12 +23,17 @@
         const running = state.status === 0;
 
         board.innerHTML = '';
-        for (const player of state.players) {
+        // Gepinnte Spieler zuerst
+        const players = [...state.players].sort((a, b) =>
+            Number(MatPlayCore.isPinned(b.id)) - Number(MatPlayCore.isPinned(a.id)));
+        for (const player of players) {
             const ps = playerState(state, player);
             const won = ps.level >= maxLevel;
+            const editableCard = running && MatPlayCore.editable(player.id);
 
             const card = document.createElement('div');
-            card.className = 'counter-card munchkin-card' + (won ? ' winner' : '');
+            card.className = 'counter-card munchkin-card' + (won ? ' winner' : '')
+                + (MatPlayCore.editable(player.id) ? '' : ' readonly');
 
             const name = document.createElement('div');
             name.className = 'counter-name';
@@ -40,9 +45,9 @@
             tag.textContent = won ? '🏆 STUFE ' + maxLevel + '!' : '';
             card.appendChild(tag);
 
-            card.appendChild(statRow('Level', ps.level, running && ps.level > 1, running && ps.level < maxLevel,
+            card.appendChild(statRow('Level', ps.level, editableCard && ps.level > 1, editableCard && ps.level < maxLevel,
                 delta => save(player, { ...ps, level: ps.level + delta })));
-            card.appendChild(statRow('Boni', ps.bonus, running, running,
+            card.appendChild(statRow('Boni', ps.bonus, editableCard, editableCard,
                 delta => save(player, { ...ps, bonus: ps.bonus + delta })));
 
             if (cfg.trackHealth) {
@@ -60,7 +65,7 @@
                     heart.textContent = i <= ps.health ? '❤️' : '🖤';
                     heart.title = `Auf ${i <= ps.health ? i - 1 : i} Leben setzen`;
                     heart.addEventListener('click', () => {
-                        if (!running) return;
+                        if (!editableCard) return;
                         save(player, { ...ps, health: i <= ps.health ? i - 1 : i });
                     });
                     hearts.appendChild(heart);
@@ -70,7 +75,7 @@
                 plus.className = 'munchkin-heart plus';
                 plus.textContent = '＋';
                 plus.title = 'Extra-Leben';
-                plus.addEventListener('click', () => { if (running) save(player, { ...ps, health: ps.health + 1 }); });
+                plus.addEventListener('click', () => { if (editableCard) save(player, { ...ps, health: ps.health + 1 }); });
                 hearts.appendChild(plus);
                 card.appendChild(hearts);
                 if (ps.health <= 0) {
@@ -114,11 +119,6 @@
         row.append(label, minus, val, plus);
         return row;
     }
-
-    document.getElementById('addPlayerBtn').addEventListener('click', () => {
-        const name = prompt('Name des neuen Spielers:');
-        if (name && name.trim()) MatPlayCore.action('/player', { name: name.trim() });
-    });
 
     MatPlayCore.init(render);
 })();
