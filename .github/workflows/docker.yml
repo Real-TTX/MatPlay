@@ -32,9 +32,12 @@ jobs:
             VERSION="nightly-${{ github.run_number }}-${BUILD_DATE}"
             EXTRA_TAG="nightly"
           fi
+          # Registry-Namen müssen kleingeschrieben sein (Real-TTX/MatPlay -> real-ttx/matplay)
+          IMAGE=$(echo "${REGISTRY}/${IMAGE_NAME}" | tr '[:upper:]' '[:lower:]')
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "extra_tag=${EXTRA_TAG}" >> "$GITHUB_OUTPUT"
-          echo "Version: ${VERSION}"
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "Version: ${VERSION} – Image: ${IMAGE}"
 
       - name: Login GHCR
         uses: docker/login-action@v3
@@ -51,5 +54,5 @@ jobs:
           build-args: |
             APP_VERSION=${{ steps.version.outputs.version }}
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.extra_tag }}
+            ${{ steps.version.outputs.image }}:${{ steps.version.outputs.version }}
+            ${{ steps.version.outputs.image }}:${{ steps.version.outputs.extra_tag }}
