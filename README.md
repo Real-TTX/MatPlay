@@ -11,6 +11,9 @@ Als PWA installierbar, mit Wake-Lock („Display bleibt an") am Spieltisch.
 - 🎲 **Qwixx** – digitaler Zettel mit Farbreihen, Schlössern und Fehlwürfen;
   inkl. „Qwixx gemixxt"-Varianten (wilde Zahlen / Farbsegmente), pro Spiel frisch ausgewürfelt
 - 🎰 **Kniffel** – kompletter Block (oberer/unterer Teil), Bonus wird automatisch gerechnet
+- 🧙 **Wizard** – Ansage vs. Stiche pro Runde, Punkte werden automatisch berechnet
+- 🃏 **Viele weitere Presets** – Skyjo, 6 nimmt!, Uno, Rommé, Canasta, Doppelkopf, Skat,
+  Schocken, Carcassonne und Darts 501 (Abzieh-Modus), jeweils mit Kurzregeln im Spiel
 - ⚔️ **Munchkin & Munchkin Quest** – Level, Boni und Kampfkraft, optional mit Lebenspunkten
 - 🔗 **Link-Freigabe** – jedes Spiel hat einen Share-Link, alle Geräte synchronisieren live
 - 🔍 **Spielkatalog** – Startseite mit Suche und Paging, bereit für viele weitere Spiele

@@ -24,6 +24,7 @@ public class EditModel(GameService games, AppDbContext db) : PageModel
     [BindProperty] public bool LowestWins { get; set; }
     [BindProperty] public bool AllowNegative { get; set; }
     [BindProperty] public bool UseRounds { get; set; }
+    [BindProperty] public bool SubtractRounds { get; set; }
 
     public Game? Game { get; private set; }
     public List<GamePlayer> Players { get; private set; } = [];
@@ -45,6 +46,7 @@ public class EditModel(GameService games, AppDbContext db) : PageModel
             LowestWins = config.LowestWins;
             AllowNegative = config.AllowNegative;
             UseRounds = config.UseRounds;
+            SubtractRounds = config.SubtractRounds;
         }
         return Page();
     }
@@ -72,6 +74,7 @@ public class EditModel(GameService games, AppDbContext db) : PageModel
                 LowestWins = LowestWins,
                 AllowNegative = AllowNegative,
                 UseRounds = UseRounds,
+                SubtractRounds = UseRounds && SubtractRounds,
             }, ModuleRegistry.JsonOpts);
         }
 

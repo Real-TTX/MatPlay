@@ -141,6 +141,8 @@
     }
 
     function addScore(state, player, value, currentTotal) {
+        // Abzieh-Modus (z.B. Darts): eingegebene Punkte wirken negativ
+        if (state.config.subtractRounds && state.config.useRounds) value = -value;
         if (!state.config.allowNegative && currentTotal + value < 0) {
             value = -currentTotal;
             if (value === 0) return;

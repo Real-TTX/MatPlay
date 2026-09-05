@@ -146,6 +146,10 @@
             <input asp-for="UseRounds" type="checkbox" />
             <span>In Runden zählen</span>
         </label>
+        <label class="form-check indent" id="subtractField">
+            <input asp-for="SubtractRounds" type="checkbox" />
+            <span>Rundenpunkte abziehen statt addieren (z.B. Darts)</span>
+        </label>
     </fieldset>
 
     <div class="action-bar">
@@ -164,12 +168,17 @@
         const hasTarget = document.getElementById('hasTarget');
         const targetField = document.getElementById('targetField');
 
+        const useRounds = document.getElementById('UseRounds');
+        const subtractField = document.getElementById('subtractField');
+
         function syncVisibility() {
             counterConfig.style.display = moduleSelect.value === 'counter' ? '' : 'none';
             qwixxConfig.style.display = moduleSelect.value === 'qwixx' ? '' : 'none';
             munchkinConfig.style.display = moduleSelect.value === 'munchkin' ? '' : 'none';
             targetField.style.display = hasTarget.checked ? '' : 'none';
+            subtractField.style.display = useRounds.checked ? '' : 'none';
         }
+        useRounds.addEventListener('change', syncVisibility);
         moduleSelect.addEventListener('change', () => {
             document.getElementById('presetPicker').mpSet('');
             syncVisibility();
@@ -197,6 +206,7 @@
                 document.getElementById('LowestWins').checked = !!c.lowestWins;
                 document.getElementById('AllowNegative').checked = c.allowNegative !== false;
                 document.getElementById('UseRounds').checked = !!c.useRounds;
+                document.getElementById('SubtractRounds').checked = !!c.subtractRounds;
             } else if (preset.moduleKey === 'qwixx') {
                 document.getElementById('QwixxVariant').value = c.variant || 'classic';
             } else if (preset.moduleKey === 'munchkin') {

@@ -1,5 +1,5 @@
 // MatPlay Service Worker – Shell-Caching für PWA
-const CACHE = 'matplay-v3';
+const CACHE = 'matplay-v4';
 const SHELL = [
     '/css/site.css',
     '/js/site.js',
@@ -8,6 +8,7 @@ const SHELL = [
     '/js/play-qwixx.js',
     '/js/play-kniffel.js',
     '/js/play-munchkin.js',
+    '/js/play-wizard.js',
     '/icons/favicon.svg',
     '/icons/icon-192.png',
     '/icons/icon-512.png',

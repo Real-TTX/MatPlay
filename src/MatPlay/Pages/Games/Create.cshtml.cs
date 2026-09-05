@@ -27,6 +27,7 @@ public class CreateModel(GameService games, SavedPlayerService savedPlayers) : P
     [BindProperty] public bool LowestWins { get; set; }
     [BindProperty] public bool AllowNegative { get; set; } = true;
     [BindProperty] public bool UseRounds { get; set; }
+    [BindProperty] public bool SubtractRounds { get; set; }
 
     // Qwixx-Konfiguration
     [BindProperty] public string QwixxVariant { get; set; } = "classic";
@@ -75,6 +76,7 @@ public class CreateModel(GameService games, SavedPlayerService savedPlayers) : P
                 LowestWins = counter.LowestWins;
                 AllowNegative = counter.AllowNegative;
                 UseRounds = counter.UseRounds;
+                SubtractRounds = counter.SubtractRounds;
                 break;
             case "qwixx":
                 var qwixx = JsonSerializer.Deserialize<QwixxConfig>(configJson, ModuleRegistry.JsonOpts);
@@ -117,6 +119,7 @@ public class CreateModel(GameService games, SavedPlayerService savedPlayers) : P
                 LowestWins = LowestWins,
                 AllowNegative = AllowNegative,
                 UseRounds = UseRounds,
+                SubtractRounds = UseRounds && SubtractRounds,
             }, ModuleRegistry.JsonOpts),
             "qwixx" => JsonSerializer.Serialize(QwixxPad.Generate(QwixxVariant), ModuleRegistry.JsonOpts),
             "munchkin" => JsonSerializer.Serialize(new MunchkinConfig { TrackHealth = MunchkinTrackHealth }, ModuleRegistry.JsonOpts),

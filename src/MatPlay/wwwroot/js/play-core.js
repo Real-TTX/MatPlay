@@ -17,18 +17,9 @@ const MatPlayCore = (function () {
 
     function isPinned(playerId) { return pins.includes(playerId); }
     function editable(playerId) { return pins.length === 0 || pins.includes(playerId); }
-    function togglePin(playerId) {
-        pins = isPinned(playerId) ? pins.filter(id => id !== playerId) : [...pins, playerId];
-        localStorage.setItem(PIN_KEY, JSON.stringify(pins));
-        renderPinBar();
-        if (renderFn && state) renderFn(state);
-    }
-    function clearPins() {
-        pins = [];
-        localStorage.setItem(PIN_KEY, '[]');
-        renderPinBar();
-        if (renderFn && state) renderFn(state);
-    }
+
+    // Pin-Auswahl als Multi-Select-Dropdown mit Checkboxen (mobil als Dialog, mp-select-Styles)
+    let pinBarSignature = '';
 
     function renderPinBar() {
         const bar = document.getElementById('pinBar');
@@ -38,27 +29,97 @@ const MatPlayCore = (function () {
         // Verwaiste Pins entfernen (Spieler gelöscht)
         pins = pins.filter(id => state.players.some(p => p.id === id));
 
+        const signature = state.players.map(p => p.id + ':' + p.name).join(',');
+        if (signature !== pinBarSignature) {
+            buildPinBar(bar);
+            pinBarSignature = signature;
+        }
+        updatePinBar(bar);
+    }
+
+    function buildPinBar(bar) {
+        const wasOpen = bar.querySelector('.mp-select')?.classList.contains('open');
         bar.innerHTML = '';
+
         const label = document.createElement('span');
         label.className = 'pin-label';
         label.textContent = '📌 Dieses Gerät bedient:';
         bar.appendChild(label);
-        for (const player of state.players) {
-            const chip = document.createElement('button');
-            chip.type = 'button';
-            chip.className = 'chip' + (isPinned(player.id) ? ' pinned' : '');
-            chip.textContent = player.name;
-            chip.title = isPinned(player.id) ? 'Pin entfernen' : 'Diesen Spieler an diesem Gerät bedienen';
-            chip.addEventListener('click', () => togglePin(player.id));
-            bar.appendChild(chip);
-        }
-        const all = document.createElement('button');
-        all.type = 'button';
-        all.className = 'chip' + (pins.length === 0 ? ' pinned' : '');
-        all.textContent = 'Alle';
-        all.title = 'Keine Einschränkung – alle Spieler bedienbar';
-        all.addEventListener('click', clearPins);
-        bar.appendChild(all);
+
+        const root = document.createElement('div');
+        root.className = 'mp-select pin-select' + (wasOpen ? ' open' : '');
+        root.innerHTML =
+            '<button type="button" class="mp-select-trigger" data-placeholder="Alle Spieler">' +
+            '<span class="mp-select-label"></span><span class="mp-select-caret">▾</span></button>' +
+            '<div class="mp-select-backdrop"></div>' +
+            '<div class="mp-select-panel" role="dialog" aria-modal="true">' +
+            '<div class="mp-select-head">' +
+            '<input type="search" class="mp-select-search" placeholder="Spieler suchen …" aria-label="Spieler suchen" />' +
+            '<button type="button" class="mp-select-close" aria-label="Schließen">✖</button></div>' +
+            '<div class="mp-select-options"></div></div>';
+
+        const optionsBox = root.querySelector('.mp-select-options');
+        const makeOption = (playerId, text) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'mp-select-option pin-option';
+            btn.dataset.pid = playerId === null ? '' : String(playerId);
+            btn.dataset.text = text.toLowerCase();
+            const check = document.createElement('span');
+            check.className = 'pin-check';
+            const main = document.createElement('span');
+            main.className = 'mp-option-main';
+            main.textContent = text;
+            btn.append(check, main);
+            btn.addEventListener('click', () => {
+                if (playerId === null) pins = [];
+                else pins = isPinned(playerId) ? pins.filter(id => id !== playerId) : [...pins, playerId];
+                localStorage.setItem(PIN_KEY, JSON.stringify(pins));
+                updatePinBar(bar);
+                if (renderFn && state) renderFn(state);
+            });
+            return btn;
+        };
+        optionsBox.appendChild(makeOption(null, 'Alle Spieler'));
+        for (const player of state.players) optionsBox.appendChild(makeOption(player.id, player.name));
+
+        const trigger = root.querySelector('.mp-select-trigger');
+        const search = root.querySelector('.mp-select-search');
+        const filter = query => {
+            query = query.trim().toLowerCase();
+            optionsBox.querySelectorAll('.pin-option').forEach(option => {
+                if (!option.dataset.pid) return; // "Alle Spieler" bleibt sichtbar
+                option.hidden = query !== '' && !option.dataset.text.includes(query);
+            });
+        };
+        const close = () => root.classList.remove('open');
+        trigger.addEventListener('click', () => {
+            if (root.classList.contains('open')) { close(); return; }
+            root.classList.add('open');
+            search.value = '';
+            filter('');
+            setTimeout(() => search.focus(), 60);
+        });
+        root.querySelector('.mp-select-close').addEventListener('click', close);
+        root.querySelector('.mp-select-backdrop').addEventListener('click', close);
+        search.addEventListener('input', () => filter(search.value));
+        document.addEventListener('click', e => { if (!root.contains(e.target)) close(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+
+        bar.appendChild(root);
+    }
+
+    function updatePinBar(bar) {
+        const root = bar.querySelector('.mp-select');
+        if (!root) return;
+        const names = state.players.filter(p => isPinned(p.id)).map(p => p.name);
+        root.querySelector('.mp-select-label').textContent = names.length ? names.join(', ') : 'Alle Spieler';
+        root.querySelectorAll('.pin-option').forEach(option => {
+            const pid = option.dataset.pid;
+            const selected = pid === '' ? pins.length === 0 : isPinned(Number(pid));
+            option.classList.toggle('selected', selected);
+            option.querySelector('.pin-check').textContent = selected ? '☑' : '☐';
+        });
     }
 
     async function api(path, body) {

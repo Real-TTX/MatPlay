@@ -83,6 +83,10 @@
                 <input asp-for="UseRounds" type="checkbox" />
                 <span>In Runden zählen</span>
             </label>
+            <label class="form-check indent" id="subtractField">
+                <input asp-for="SubtractRounds" type="checkbox" />
+                <span>Rundenpunkte abziehen statt addieren (z.B. Darts)</span>
+            </label>
         </fieldset>
     }
 
@@ -100,8 +104,14 @@
         const hasTarget = document.getElementById('hasTarget');
         const targetField = document.getElementById('targetField');
         if (hasTarget && targetField) {
-            const sync = () => targetField.style.display = hasTarget.checked ? '' : 'none';
+            const useRounds = document.getElementById('UseRounds');
+            const subtractField = document.getElementById('subtractField');
+            const sync = () => {
+                targetField.style.display = hasTarget.checked ? '' : 'none';
+                subtractField.style.display = useRounds.checked ? '' : 'none';
+            };
             hasTarget.addEventListener('change', sync);
+            useRounds.addEventListener('change', sync);
             sync();
         }
 

@@ -12,6 +12,8 @@ public class CounterConfig
     public bool LowestWins { get; set; }
     public bool AllowNegative { get; set; } = true;
     public bool UseRounds { get; set; }
+    /// <summary>Rundenmodus: eingegebene Punkte werden abgezogen statt addiert (z.B. Darts 501).</summary>
+    public bool SubtractRounds { get; set; }
 }
 
 /// <summary>Konfiguration des Munchkin-Trackers (Quest-Variante zählt Lebenspunkte mit).</summary>
@@ -166,7 +168,7 @@ public static class ModuleRegistry
             Key = "counter",
             Name = "Punktezähler",
             Description = "Generischer Zähler für beliebige Karten- und Brettspiele – hoch oder runter.",
-            Icon = "🎯",
+            Icon = "🧮",
             Accent = "cyan",
             PlayPartial = "Modules/_Counter",
             DefaultConfigJson = JsonSerializer.Serialize(new CounterConfig(), JsonOpts),
@@ -192,6 +194,15 @@ public static class ModuleRegistry
         },
         new GameModule
         {
+            Key = "wizard",
+            Name = "Wizard",
+            Description = "Stiche ansagen und treffen – Punkte werden automatisch berechnet.",
+            Icon = "🧙",
+            Accent = "cyan",
+            PlayPartial = "Modules/_Wizard",
+        },
+        new GameModule
+        {
             Key = "munchkin",
             Name = "Munchkin",
             Description = "Level, Boni und Kampfkraft im Blick – optional mit Lebenspunkten (Munchkin Quest).",
@@ -210,7 +221,7 @@ public static class ModuleRegistry
             Key = "counter",
             Name = "Punktezähler",
             Description = "Frei konfigurierbar – für alles, was Punkte hat.",
-            Icon = "🎯",
+            Icon = "🧮",
             Accent = "cyan",
             ModuleKey = "counter",
             ConfigJson = JsonSerializer.Serialize(new CounterConfig(), JsonOpts),
@@ -378,6 +389,222 @@ public static class ModuleRegistry
                 "Variante B (wilde Zahlen): Zahlen sind gemischt – angekreuzt wird trotzdem nur von links nach rechts.",
                 "Variante A (Farbsegmente): Zahlen laufen auf/ab, aber die Feldfarbe bestimmt den passenden Farbwürfel.",
                 "Der Block wird hier für jedes Spiel frisch ausgewürfelt.",
+            ],
+        },
+        new GamePreset
+        {
+            Key = "wizard",
+            Name = "Wizard",
+            Description = "Stiche ansagen, exakt treffen – der Punkteblock rechnet automatisch.",
+            Icon = "🧙",
+            Accent = "cyan",
+            ModuleKey = "wizard",
+            Rules =
+            [
+                "Jede Runde eine Karte mehr; vorher sagt jeder seine Stiche an.",
+                "Ansage getroffen: 20 Punkte + 10 pro Stich.",
+                "Daneben: −10 pro Stich Abweichung.",
+                "Zauberer gewinnt immer, Narr verliert immer; Rundenanzahl = 60 / Spielerzahl.",
+            ],
+        },
+        new GamePreset
+        {
+            Key = "skyjo",
+            Name = "Skyjo",
+            Description = "Kartenwerte minimieren – bei 100 Punkten ist Schluss, wenigste gewinnen.",
+            Icon = "🦩",
+            Accent = "lime",
+            ModuleKey = "counter",
+            ConfigJson = JsonSerializer.Serialize(new CounterConfig
+            {
+                StartScore = 0, Step = 1, TargetScore = 100, LowestWins = true,
+                AllowNegative = true, UseRounds = true,
+            }, JsonOpts),
+            Rules =
+            [
+                "Rundenende: Alle decken auf und zählen ihre Kartenwerte (−2 bis 12) – hier eintragen.",
+                "Wer die Runde beendet und NICHT die wenigsten Punkte hat, bekommt seine Punkte doppelt!",
+                "Drei gleiche Karten in einer Spalte fliegen raus.",
+                "Bei 100 Punkten endet das Spiel – wenigste Punkte gewinnen.",
+            ],
+        },
+        new GamePreset
+        {
+            Key = "sechsnimmt",
+            Name = "6 nimmt!",
+            Description = "Hornochsen sammeln will keiner – bei 66 ist Schluss.",
+            Icon = "🐂",
+            Accent = "orange",
+            ModuleKey = "counter",
+            ConfigJson = JsonSerializer.Serialize(new CounterConfig
+            {
+                StartScore = 0, Step = 1, TargetScore = 66, LowestWins = true,
+                AllowNegative = false, UseRounds = true,
+            }, JsonOpts),
+            Rules =
+            [
+                "Karten verdeckt wählen, aufsteigend anlegen – die 6. Karte einer Reihe kassiert die Reihe.",
+                "Hornochsen zählen als Minuspunkte: normale Karte 1, 5er-Enden 2, Zehner 3, 55 = 7.",
+                "Rundenende: Hornochsen hier eintragen – bei 66 Punkten endet das Spiel, wenigste gewinnen.",
+            ],
+        },
+        new GamePreset
+        {
+            Key = "uno",
+            Name = "Uno",
+            Description = "Punkte der Verlierer-Handkarten kassieren – wer zuerst 500 hat, gewinnt.",
+            Icon = "🌈",
+            Accent = "magenta",
+            ModuleKey = "counter",
+            ConfigJson = JsonSerializer.Serialize(new CounterConfig
+            {
+                StartScore = 0, Step = 1, TargetScore = 500, LowestWins = false,
+                AllowNegative = false, UseRounds = true,
+            }, JsonOpts),
+            Rules =
+            [
+                "Rundensieger bekommt die Handkarten-Punkte aller anderen (hier eintragen).",
+                "Zahlenkarten = Wert, Aktionskarten 20, schwarze Karten 50.",
+                "Wer zuerst 500 Punkte erreicht, gewinnt.",
+            ],
+        },
+        new GamePreset
+        {
+            Key = "romme",
+            Name = "Rommé",
+            Description = "Restkarten zählen minus – wer 1000 reißt, beendet das Spiel.",
+            Icon = "🎴",
+            Accent = "cyan",
+            ModuleKey = "counter",
+            ConfigJson = JsonSerializer.Serialize(new CounterConfig
+            {
+                StartScore = 0, Step = 1, TargetScore = 1000, LowestWins = true,
+                AllowNegative = false, UseRounds = true,
+            }, JsonOpts),
+            Rules =
+            [
+                "Erstauslage mindestens 40 Punkte, Joker zählt wie die ersetzte Karte.",
+                "Rundenende: Restkarten auf der Hand als Minuspunkte eintragen (Bube-König 10, Ass 11, Joker 20).",
+                "Klopfer/Hausregeln vorher klären – bei 1000 Punkten ist Schluss, wenigste gewinnen.",
+            ],
+        },
+        new GamePreset
+        {
+            Key = "canasta",
+            Name = "Canasta",
+            Description = "Meldungen, Canastas und rote Dreier – erstes Team über 5000 gewinnt.",
+            Icon = "🧺",
+            Accent = "lime",
+            ModuleKey = "counter",
+            ConfigJson = JsonSerializer.Serialize(new CounterConfig
+            {
+                StartScore = 0, Step = 1, TargetScore = 5000, LowestWins = false,
+                AllowNegative = true, UseRounds = true,
+            }, JsonOpts),
+            Rules =
+            [
+                "Pro Team einen Spieler anlegen und die Rundensummen eintragen.",
+                "Echtes Canasta 500, unechtes 300, Ausmachen 100, roter Dreier 100 (alle vier: 800).",
+                "Restkarten zählen minus – erstes Team über 5000 Punkte gewinnt.",
+            ],
+        },
+        new GamePreset
+        {
+            Key = "doppelkopf",
+            Name = "Doppelkopf",
+            Description = "Spielwerte pro Runde notieren – auch ins Minus.",
+            Icon = "🐷",
+            Accent = "orange",
+            ModuleKey = "counter",
+            ConfigJson = JsonSerializer.Serialize(new CounterConfig
+            {
+                StartScore = 0, Step = 1, LowestWins = false,
+                AllowNegative = true, UseRounds = true,
+            }, JsonOpts),
+            Rules =
+            [
+                "Gewinner der Runde bekommen den Spielwert plus, Verlierer minus (hier eintragen).",
+                "Spielwert: 1 Grundpunkt + je 1 für Ansagen (Re/Kontra), keine 90/60/30, schwarz, Extras (Fuchs, Karlchen, Doppelkopf).",
+                "Solo: Solist bekommt/zahlt den dreifachen Wert.",
+            ],
+        },
+        new GamePreset
+        {
+            Key = "skat",
+            Name = "Skat",
+            Description = "Spielwerte klassisch anschreiben – verlorene Spiele doppelt minus.",
+            Icon = "♠️",
+            Accent = "cyan",
+            ModuleKey = "counter",
+            ConfigJson = JsonSerializer.Serialize(new CounterConfig
+            {
+                StartScore = 0, Step = 1, LowestWins = false,
+                AllowNegative = true, UseRounds = true,
+            }, JsonOpts),
+            Rules =
+            [
+                "Nur der Alleinspieler schreibt: gewonnen = Spielwert plus, verloren = doppelter Spielwert minus.",
+                "Spielwert = Grundwert (Karo 9, Herz 10, Pik 11, Kreuz 12, Grand 24) × Spitzen+1 (+ Hand/Schneider/Schwarz/Ouvert).",
+                "Null 23, Null Hand 35, Null Ouvert 46, Null Ouvert Hand 59.",
+            ],
+        },
+        new GamePreset
+        {
+            Key = "schocken",
+            Name = "Schocken",
+            Description = "Deckel zählen in der Kneipenrunde – wer am Ende alle hat, zahlt.",
+            Icon = "🍺",
+            Accent = "orange",
+            ModuleKey = "counter",
+            ConfigJson = JsonSerializer.Serialize(new CounterConfig
+            {
+                StartScore = 0, Step = 1, LowestWins = true, AllowNegative = false,
+            }, JsonOpts),
+            Rules =
+            [
+                "13 Deckel in der Mitte; der Rundenverlierer bekommt Deckel vom Gewinner-Wurf (hier hochzählen).",
+                "Schock aus! (1-1-1) beendet die Halbzeit sofort – Verlierer bekommt alle Deckel.",
+                "Wer eine Halbzeit verliert, spielt im Finale – der Finalverlierer gibt einen aus. 🍻",
+            ],
+        },
+        new GamePreset
+        {
+            Key = "carcassonne",
+            Name = "Carcassonne",
+            Description = "Punkte für Straßen, Städte und Klöster direkt mitzählen.",
+            Icon = "🏰",
+            Accent = "lime",
+            ModuleKey = "counter",
+            ConfigJson = JsonSerializer.Serialize(new CounterConfig
+            {
+                StartScore = 0, Step = 1, LowestWins = false, AllowNegative = false,
+            }, JsonOpts),
+            Rules =
+            [
+                "Fertige Straße: 1 Punkt pro Plättchen; fertige Stadt: 2 pro Plättchen (+2 je Wappen).",
+                "Fertiges Kloster: 9 Punkte.",
+                "Schlusswertung: Unfertiges zählt 1 pro Plättchen/Wappen, Wiesen 3 Punkte pro versorgter Stadt.",
+            ],
+        },
+        new GamePreset
+        {
+            Key = "darts501",
+            Name = "Darts 501",
+            Description = "Von 501 runter auf exakt 0 – geworfene Punkte einfach eintragen.",
+            Icon = "🎯",
+            Accent = "magenta",
+            ModuleKey = "counter",
+            ConfigJson = JsonSerializer.Serialize(new CounterConfig
+            {
+                StartScore = 501, Step = 1, TargetScore = 0, LowestWins = true,
+                AllowNegative = false, UseRounds = true, SubtractRounds = true,
+            }, JsonOpts),
+            Rules =
+            [
+                "Pro Aufnahme (3 Darts) die geworfenen Punkte eintragen – sie werden automatisch abgezogen.",
+                "Klassisch endet das Leg mit einem Doppel (Double-Out) auf exakt 0.",
+                "Überworfen (Bust)? Aufnahme zählt nicht – einfach 0 eintragen.",
+                "Für 301 einfach die Startpunkte im Formular anpassen.",
             ],
         },
     ];
