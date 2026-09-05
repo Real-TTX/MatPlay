@@ -3,8 +3,9 @@ obj/
 *.user
 .vs/
 .idea/
-data/
-src/MatPlay/data/
+# Laufzeitdaten (nicht src/MatPlay/Data – das ist Quellcode!)
+/data/
+appdata/
 *.db
 *.db-shm
 *.db-wal

@@ -8,8 +8,9 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Datenverzeichnis (Volume im Container): DB, Configs
+// "appdata" statt "data", um lokal keine Namenskollision mit dem Quellordner Data/ zu haben
 var dataDir = Environment.GetEnvironmentVariable("MATPLAY_DATA")
-              ?? Path.Combine(builder.Environment.ContentRootPath, "data");
+              ?? Path.Combine(builder.Environment.ContentRootPath, "appdata");
 var dbDir = Path.Combine(dataDir, "db");
 Directory.CreateDirectory(dbDir);
 
