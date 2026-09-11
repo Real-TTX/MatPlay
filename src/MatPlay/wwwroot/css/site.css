@@ -614,6 +614,16 @@ a, button, input, select, textarea, label,
 }
 .round-history h3, .qwixx-scoreboard h3 { margin: 20px 0 10px; }
 
+/* Phase-10-Modul */
+.phase-badge {
+    display: inline-block; margin-top: 6px; padding: 4px 14px;
+    border-radius: 999px; font-weight: 900; letter-spacing: 0.5px;
+    background: var(--panel-2); border: 1px solid var(--neon-orange); color: var(--neon-orange);
+}
+.phase-desc { margin-top: 6px; font-size: 0.85rem; color: var(--text-dim); min-height: 2.2em; }
+.phase-points { font-size: 2.2rem; }
+.phase-done { justify-content: center; margin: 6px 0 0; }
+
 /* Wizard-Modul */
 .wizard-info {
     margin-bottom: 14px; padding: 10px 16px; text-align: center;

@@ -194,6 +194,15 @@ public static class ModuleRegistry
         },
         new GameModule
         {
+            Key = "phase10",
+            Name = "Phase 10",
+            Description = "Phasen-Tracker mit Punkten: wer spielt welche Phase, wer hat sie geschafft?",
+            Icon = "🔟",
+            Accent = "orange",
+            PlayPartial = "Modules/_Phase10",
+        },
+        new GameModule
+        {
             Key = "wizard",
             Name = "Wizard",
             Description = "Stiche ansagen und treffen – Punkte werden automatisch berechnet.",
@@ -250,21 +259,18 @@ public static class ModuleRegistry
         new GamePreset
         {
             Key = "phase10",
-            Name = "Phase 10 (Punkte)",
-            Description = "Minuspunkte pro Runde zählen – wenigste Punkte gewinnen.",
+            Name = "Phase 10",
+            Description = "Phasen-Tracker: aktuelle Phase, geschafft-Haken und Minuspunkte pro Runde.",
             Icon = "🔟",
             Accent = "orange",
-            ModuleKey = "counter",
-            ConfigJson = JsonSerializer.Serialize(new CounterConfig
-            {
-                StartScore = 0, Step = 5, LowestWins = true, AllowNegative = false, UseRounds = true,
-            }, JsonOpts),
+            ModuleKey = "phase10",
             Rules =
             [
-                "10 Phasen in fester Reihenfolge schaffen (Zwillinge, Folgen, Farben …).",
-                "Rundenende: Restkarten der anderen zählen als Minuspunkte (hier eintragen).",
+                "10 Phasen in fester Reihenfolge schaffen – deine aktuelle Phase steht auf deiner Karte.",
+                "Rundenende: Restkarten als Minuspunkte eintragen und ankreuzen, ob die Phase geschafft wurde.",
+                "Nur wer die Phase geschafft hat, rückt zur nächsten vor – sonst nochmal probieren.",
                 "Kartenwerte: 1-9 = 5 Punkte, 10-12 = 10 Punkte, Aussetzen = 15, Joker = 25.",
-                "Wer zuerst Phase 10 schafft, beendet das Spiel – bei Gleichstand entscheiden die wenigsten Punkte.",
+                "Wer zuerst Phase 10 schafft, gewinnt – bei mehreren entscheiden die wenigsten Punkte.",
             ],
         },
         new GamePreset
