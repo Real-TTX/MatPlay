@@ -148,6 +148,8 @@ const MatPlayCore = (function () {
         const running = state.status === 0;
         statusBadge.textContent = running ? '🟢 Läuft' : '🏁 Beendet';
         statusBadge.className = 'badge ' + (running ? 'badge-live' : 'badge-done');
+        const finishBtn = document.getElementById('finishBtn');
+        if (finishBtn) finishBtn.textContent = running ? '🏁 Beenden' : '▶️ Fortsetzen';
     }
 
     function startPolling() {
@@ -188,6 +190,21 @@ const MatPlayCore = (function () {
         document.addEventListener('visibilitychange', () => {
             // Wake Lock wird beim Tab-Wechsel freigegeben – aktiv gewesenen Lock wiederholen
             if (!document.hidden && btn.classList.contains('active') && !lock) acquire();
+        });
+    })();
+
+    // ---- Spiel beenden / fortsetzen (Button nur für den Besitzer gerendert) ----
+    (function () {
+        const btn = document.getElementById('finishBtn');
+        if (!btn) return;
+        btn.addEventListener('click', async () => {
+            if (!state) return;
+            const running = state.status === 0;
+            const question = running
+                ? 'Spiel beenden? Danach kann nicht mehr gezählt werden.'
+                : 'Spiel fortsetzen?';
+            if (!confirm(question)) return;
+            await action('/status', { status: running ? 1 : 0 });
         });
     })();
 
