@@ -17,6 +17,7 @@
     }
     @if (Model.IsOwner)
     {
+        <button type="button" class="btn btn-secondary btn-sm" id="finishBtn" title="Spiel beenden bzw. fortsetzen">🏁 Beenden</button>
         <a class="btn btn-secondary btn-sm" href="/games/edit/@Model.Game.Id" title="Bearbeiten">✏️</a>
     }
 </div>
