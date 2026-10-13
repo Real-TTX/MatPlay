@@ -615,6 +615,10 @@ public static class ModuleRegistry
         },
     ];
 
+    /// <summary>Cover-Symbol eines Spiels: das Icon der Spielart (Preset), sonst das des Moduls.</summary>
+    public static string IconFor(string moduleKey, string? presetKey) =>
+        (presetKey != null ? GetPreset(presetKey)?.Icon : null) ?? GetModule(moduleKey)?.Icon ?? "🎮";
+
     public static GameModule? GetModule(string key) => Modules.FirstOrDefault(m => m.Key == key);
     public static GamePreset? GetPreset(string key) => Presets.FirstOrDefault(p => p.Key == key);
 }

@@ -1,4 +1,4 @@
-// ============ MatPlay – Play-Core: API, Live-Polling, Wake Lock, Teilen ============
+// ============ MatPlay – Play-Core: API, Live-Polling, Pins, Wake Lock, Teilen ============
 
 const MatPlayCore = (function () {
     const root = document.getElementById('playRoot');
@@ -10,6 +10,12 @@ const MatPlayCore = (function () {
     let renderFn = null;
     let pollTimer = null;
 
+    /** Setzt nur das Textlabel eines Buttons (das Icon bleibt erhalten). */
+    function setLabel(btn, text) {
+        const label = btn.querySelector('.mp-lbl');
+        if (label) label.textContent = text;
+    }
+
     // ---- Spieler-Pinning: dieses Gerät bedient nur die gepinnten Spieler (lokal gespeichert) ----
     const PIN_KEY = 'matplay-pins-' + token;
     let pins = [];
@@ -18,7 +24,6 @@ const MatPlayCore = (function () {
     function isPinned(playerId) { return pins.includes(playerId); }
     function editable(playerId) { return pins.length === 0 || pins.includes(playerId); }
 
-    // Pin-Auswahl als Multi-Select-Dropdown mit Checkboxen (mobil als Dialog, mp-select-Styles)
     let pinBarSignature = '';
 
     function renderPinBar() {
@@ -29,96 +34,57 @@ const MatPlayCore = (function () {
         // Verwaiste Pins entfernen (Spieler gelöscht)
         pins = pins.filter(id => state.players.some(p => p.id === id));
 
+        // Die Leiste nur neu bauen, wenn sich die Spielerliste ändert (ein offenes Panel bleibt sonst stehen)
         const signature = state.players.map(p => p.id + ':' + p.name).join(',');
         if (signature !== pinBarSignature) {
             buildPinBar(bar);
             pinBarSignature = signature;
         }
-        updatePinBar(bar);
     }
 
+    /** "Dieses Gerät bedient": Multi-Select-Picker des Toolkits (mobil als Vollbild-Dialog). */
     function buildPinBar(bar) {
-        const wasOpen = bar.querySelector('.mp-select')?.classList.contains('open');
         bar.innerHTML = '';
+        const label = document.createElement('label');
+        label.className = 'mat-label mp-pin__label';
+        label.htmlFor = 'pinValue';
+        label.textContent = 'Dieses Gerät bedient';
 
-        const label = document.createElement('span');
-        label.className = 'pin-label';
-        label.textContent = '📌 Dieses Gerät bedient:';
-        bar.appendChild(label);
+        const wrapper = document.createElement('div');
+        wrapper.className = 'mat-picker';
+        wrapper.setAttribute('data-picker', 'select');
+        wrapper.setAttribute('data-multiple', '');
+        wrapper.setAttribute('data-clearable', '');
+        wrapper.setAttribute('data-placeholder', 'Alle Spieler');
 
-        const root = document.createElement('div');
-        root.className = 'mp-select pin-select' + (wasOpen ? ' open' : '');
-        root.innerHTML =
-            '<button type="button" class="mp-select-trigger" data-placeholder="Alle Spieler">' +
-            '<span class="mp-select-label"></span><span class="mp-select-caret">▾</span></button>' +
-            '<div class="mp-select-backdrop"></div>' +
-            '<div class="mp-select-panel" role="dialog" aria-modal="true">' +
-            '<div class="mp-select-head">' +
-            '<input type="search" class="mp-select-search" placeholder="Spieler suchen …" aria-label="Spieler suchen" />' +
-            '<button type="button" class="mp-select-close" aria-label="Schließen">✖</button></div>' +
-            '<div class="mp-select-options"></div></div>';
+        const input = document.createElement('input');
+        input.className = 'mat-picker__input';
+        input.id = 'pinValue';
+        input.value = pins.join(',');
 
-        const optionsBox = root.querySelector('.mp-select-options');
-        const makeOption = (playerId, text) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'mp-select-option pin-option';
-            btn.dataset.pid = playerId === null ? '' : String(playerId);
-            btn.dataset.text = text.toLowerCase();
-            const check = document.createElement('span');
-            check.className = 'pin-check';
-            const main = document.createElement('span');
-            main.className = 'mp-option-main';
-            main.textContent = text;
-            btn.append(check, main);
-            btn.addEventListener('click', () => {
-                if (playerId === null) pins = [];
-                else pins = isPinned(playerId) ? pins.filter(id => id !== playerId) : [...pins, playerId];
-                localStorage.setItem(PIN_KEY, JSON.stringify(pins));
-                updatePinBar(bar);
-                if (renderFn && state) renderFn(state);
-            });
-            return btn;
-        };
-        optionsBox.appendChild(makeOption(null, 'Alle Spieler'));
-        for (const player of state.players) optionsBox.appendChild(makeOption(player.id, player.name));
+        const options = document.createElement('div');
+        options.className = 'mat-picker__options';
+        options.hidden = true;
+        for (const player of state.players) {
+            const option = document.createElement('button');
+            option.type = 'button';
+            option.className = 'mat-picker__option';
+            option.dataset.value = String(player.id);
+            option.innerHTML = '<span class="mat-picker__text"><span class="mat-picker__name"></span></span>';
+            option.querySelector('.mat-picker__name').textContent = player.name;
+            options.appendChild(option);
+        }
 
-        const trigger = root.querySelector('.mp-select-trigger');
-        const search = root.querySelector('.mp-select-search');
-        const filter = query => {
-            query = query.trim().toLowerCase();
-            optionsBox.querySelectorAll('.pin-option').forEach(option => {
-                if (!option.dataset.pid) return; // "Alle Spieler" bleibt sichtbar
-                option.hidden = query !== '' && !option.dataset.text.includes(query);
-            });
-        };
-        const close = () => root.classList.remove('open');
-        trigger.addEventListener('click', () => {
-            if (root.classList.contains('open')) { close(); return; }
-            root.classList.add('open');
-            search.value = '';
-            filter('');
-            setTimeout(() => search.focus(), 60);
-        });
-        root.querySelector('.mp-select-close').addEventListener('click', close);
-        root.querySelector('.mp-select-backdrop').addEventListener('click', close);
-        search.addEventListener('input', () => filter(search.value));
-        document.addEventListener('click', e => { if (!root.contains(e.target)) close(); });
-        document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+        wrapper.append(input, options);
+        bar.append(label, wrapper);
+        MatUi.picker.init(bar);
 
-        bar.appendChild(root);
-    }
-
-    function updatePinBar(bar) {
-        const root = bar.querySelector('.mp-select');
-        if (!root) return;
-        const names = state.players.filter(p => isPinned(p.id)).map(p => p.name);
-        root.querySelector('.mp-select-label').textContent = names.length ? names.join(', ') : 'Alle Spieler';
-        root.querySelectorAll('.pin-option').forEach(option => {
-            const pid = option.dataset.pid;
-            const selected = pid === '' ? pins.length === 0 : isPinned(Number(pid));
-            option.classList.toggle('selected', selected);
-            option.querySelector('.pin-check').textContent = selected ? '☑' : '☐';
+        input.addEventListener('change', () => {
+            pins = input.value
+                ? input.value.split(',').map(Number).filter(n => !Number.isNaN(n))
+                : [];
+            localStorage.setItem(PIN_KEY, JSON.stringify(pins));
+            if (renderFn && state) renderFn(state);
         });
     }
 
@@ -146,10 +112,10 @@ const MatPlayCore = (function () {
     function updateStatusBadge() {
         if (!statusBadge || !state) return;
         const running = state.status === 0;
-        statusBadge.textContent = running ? '🟢 Läuft' : '🏁 Beendet';
-        statusBadge.className = 'badge ' + (running ? 'badge-live' : 'badge-done');
+        statusBadge.textContent = running ? 'Läuft' : 'Beendet';
+        statusBadge.className = 'mat-pill ' + (running ? 'mat-pill--ok' : 'mat-pill--plain');
         const finishBtn = document.getElementById('finishBtn');
-        if (finishBtn) finishBtn.textContent = running ? '🏁 Beenden' : '▶️ Fortsetzen';
+        if (finishBtn) setLabel(finishBtn, running ? 'Beenden' : 'Fortsetzen');
     }
 
     function startPolling() {
@@ -166,22 +132,33 @@ const MatPlayCore = (function () {
         await refresh(true);
     }
 
+    // ---- Kurzregeln (Hilfe-Button) ----
+    (function () {
+        const btn = document.getElementById('rulesBtn');
+        const panel = document.getElementById('rulesPanel');
+        if (!btn || !panel) return;
+        btn.addEventListener('click', () => {
+            panel.hidden = !panel.hidden;
+            btn.setAttribute('aria-expanded', String(!panel.hidden));
+        });
+    })();
+
     // ---- Wake Lock (Bildschirm anlassen, iOS 16.4+/Android) ----
     (function () {
         const btn = document.getElementById('wakeLockBtn');
         if (!btn) return;
-        if (!('wakeLock' in navigator)) { btn.style.display = 'none'; return; }
+        if (!('wakeLock' in navigator)) { btn.hidden = true; return; }
         let lock = null;
 
         async function acquire() {
             try {
                 lock = await navigator.wakeLock.request('screen');
-                btn.classList.add('active');
-                btn.textContent = '📱 Display bleibt an';
+                btn.classList.add('is-active');
+                setLabel(btn, 'Display bleibt an');
                 lock.addEventListener('release', () => {
                     lock = null;
-                    btn.classList.remove('active');
-                    btn.textContent = '📱 Display an';
+                    btn.classList.remove('is-active');
+                    setLabel(btn, 'Display an');
                 });
             } catch { /* z.B. Energiesparmodus */ }
         }
@@ -189,7 +166,7 @@ const MatPlayCore = (function () {
         btn.addEventListener('click', () => lock ? lock.release() : acquire());
         document.addEventListener('visibilitychange', () => {
             // Wake Lock wird beim Tab-Wechsel freigegeben – aktiv gewesenen Lock wiederholen
-            if (!document.hidden && btn.classList.contains('active') && !lock) acquire();
+            if (!document.hidden && btn.classList.contains('is-active') && !lock) acquire();
         });
     })();
 
@@ -200,10 +177,10 @@ const MatPlayCore = (function () {
         btn.addEventListener('click', async () => {
             if (!state) return;
             const running = state.status === 0;
-            const question = running
-                ? 'Spiel beenden? Danach kann nicht mehr gezählt werden.'
-                : 'Spiel fortsetzen?';
-            if (!confirm(question)) return;
+            const ok = await MatUi.confirm(
+                running ? 'Spiel beenden? Danach kann nicht mehr gezählt werden.' : 'Spiel fortsetzen?',
+                { ok: running ? 'Beenden' : 'Fortsetzen', danger: running });
+            if (!ok) return;
             await action('/status', { status: running ? 1 : 0 });
         });
     })();
@@ -218,12 +195,21 @@ const MatPlayCore = (function () {
                 try { await navigator.share({ title: document.title, url }); } catch { /* abgebrochen */ }
             } else {
                 await navigator.clipboard.writeText(url);
-                const old = btn.textContent;
-                btn.textContent = '✔ Link kopiert';
-                setTimeout(() => btn.textContent = old, 1500);
+                MatUi.toast('Link kopiert', { tone: 'success' });
             }
         });
     })();
+
+    /** Ein Icon aus dem Sprite als SVG-Markup (für per Skript gebaute Oberflächen). */
+    function icon(name) {
+        return '<svg class="mat-icon" aria-hidden="true" focusable="false"><use href="#mat-i-' + name + '"></use></svg>';
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 
     return {
         token,
@@ -232,6 +218,8 @@ const MatPlayCore = (function () {
         refresh,
         isPinned,
         editable,
+        icon,
+        escapeHtml,
         get state() { return state; },
         init(render) {
             renderFn = render;

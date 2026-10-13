@@ -1,35 +1,38 @@
 @page "/account/register"
 @model MatPlay.Pages.Account.RegisterModel
 @{
+    Layout = "_AuthLayout";
     ViewData["Title"] = "Registrieren";
-    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Registrieren", null) };
 }
 
-<div class="auth-card">
-    @if (Model.Error != null)
-    {
-        <div class="alert alert-error">@Model.Error</div>
-    }
-    <form method="post" class="form">
-        <label class="form-field">
-            <span>Benutzername</span>
-            <input asp-for="Username" required minlength="3" maxlength="40" autocomplete="username" />
-        </label>
-        <label class="form-field">
-            <span>Anzeigename (optional)</span>
-            <input asp-for="DisplayName" maxlength="60" />
-        </label>
-        <label class="form-field">
-            <span>Passwort</span>
-            <input asp-for="Password" type="password" required minlength="6" autocomplete="new-password" />
-        </label>
-        <label class="form-field">
-            <span>Passwort wiederholen</span>
-            <input asp-for="PasswordRepeat" type="password" required autocomplete="new-password" />
-        </label>
-        <div class="action-bar">
-            <button type="submit" class="btn btn-primary">✨ Konto erstellen</button>
-            <a class="btn btn-secondary" href="/account/login">‹ Zurück</a>
-        </div>
-    </form>
-</div>
+@if (Model.Error != null)
+{
+    <div class="mat-alert mat-alert--danger" role="alert">@Ui.Icon("alert")<span>@Model.Error</span></div>
+}
+
+<form method="post" class="mat-form" novalidate>
+    <div class="mat-field">
+        <label class="mat-label" for="Username">Benutzername <span class="mat-req" aria-hidden="true">*</span></label>
+        <input asp-for="Username" class="mat-input" required minlength="3" maxlength="40" autocomplete="username" data-msg-required="Bitte wähle einen Benutzernamen." />
+        <span class="mat-error" aria-live="polite"></span>
+    </div>
+    <div class="mat-field">
+        <label class="mat-label" for="DisplayName">Anzeigename</label>
+        <input asp-for="DisplayName" class="mat-input" maxlength="60" />
+        <span class="mat-hint">Optional – sonst wird der Benutzername angezeigt.</span>
+    </div>
+    <div class="mat-field">
+        <label class="mat-label" for="Password">Passwort <span class="mat-req" aria-hidden="true">*</span></label>
+        <input asp-for="Password" type="password" class="mat-input" required minlength="6" autocomplete="new-password" data-msg-required="Bitte lege ein Passwort fest." />
+        <span class="mat-error" aria-live="polite"></span>
+    </div>
+    <div class="mat-field">
+        <label class="mat-label" for="PasswordRepeat">Passwort wiederholen <span class="mat-req" aria-hidden="true">*</span></label>
+        <input asp-for="PasswordRepeat" type="password" class="mat-input" required autocomplete="new-password" data-msg-required="Bitte wiederhole das Passwort." />
+        <span class="mat-error" aria-live="polite"></span>
+    </div>
+    <div class="mat-btn-row">
+        <button type="submit" class="mat-btn mat-btn--primary">@Ui.Icon("check")<span>Konto erstellen</span></button>
+        <a class="mat-btn mat-btn--secondary" href="/account/login">@Ui.Icon("back")<span>Zurück</span></a>
+    </div>
+</form>

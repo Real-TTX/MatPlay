@@ -1,15 +1,15 @@
-<div class="counter-board" id="counterBoard"></div>
+<div class="mp-board" id="counterBoard"></div>
 
-<div class="play-actions">
-    <button type="button" class="btn btn-secondary" id="undoBtn">↩️ Rückgängig</button>
+<div class="mp-actions">
+    <button type="button" class="mat-btn mat-btn--secondary" id="undoBtn">@Ui.Icon("restore")<span>Rückgängig</span></button>
 </div>
 
-<section class="round-history" id="roundHistory" hidden>
-    <h3>Runden</h3>
-    <div class="table-wrap"><table class="table" id="roundTable"></table></div>
+<section id="roundHistory" hidden>
+    <h2 class="mp-section-title">Runden</h2>
+    <div class="mat-table-wrap"><table class="mat-table" id="roundTable"></table></div>
 </section>
 
-<section class="round-history" id="logHistory" hidden>
-    <h3>Verlauf</h3>
-    <ul class="log-list" id="logList"></ul>
+<section id="logHistory" hidden>
+    <h2 class="mp-section-title">Verlauf</h2>
+    <ul class="mp-log" id="logList"></ul>
 </section>

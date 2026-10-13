@@ -1,0 +1,94 @@
+@inject CurrentContext Current
+@inject AppInfo AppInfo
+@inject AppConfigService Config
+@{
+    var path = Context.Request.Path.Value ?? "/";
+    bool Active(string prefix) => prefix == "/"
+        ? path == "/"
+        : path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+    string Cls(string prefix) => "mat-nav__item" + (Active(prefix) ? " is-active" : "");
+    string? Cur(string prefix) => Active(prefix) ? "page" : null;
+    // "Neues Spiel" (Katalog + Erstellen-Formular) gehört zur Hauptaktion, nicht zu "Meine Spiele"
+    var inNewGame = path.StartsWith("/games/new", StringComparison.OrdinalIgnoreCase)
+                    || path.StartsWith("/games/create", StringComparison.OrdinalIgnoreCase);
+    var inMyGames = !inNewGame && (path.StartsWith("/games", StringComparison.OrdinalIgnoreCase)
+                    || path.StartsWith("/play/", StringComparison.OrdinalIgnoreCase));
+    var name = Current.User?.DisplayName ?? "Gast";
+    var role = Current.User?.Role switch { Roles.Admin => "Administrator", Roles.User => "Benutzer", _ => "Anonym" };
+}
+
+<aside class="mat-nav" id="mat-nav">
+    <div class="mat-nav__brand">
+        <a href="/" aria-label="MatPlay">
+            <img class="mp-logo" src="/icons/favicon.svg" width="30" height="30" alt="" />
+            <span class="mat-nav__name">MatPlay</span>
+        </a>
+        <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-nav__close" data-nav-close aria-label="Schließen">@Ui.Icon("x")</button>
+    </div>
+
+    <nav class="mat-nav__scroll" aria-label="Hauptnavigation">
+        <ul class="mat-nav__list">
+            <li>
+                <a class="mat-nav__item mat-nav__item--primary" href="/games/new" aria-current="@(inNewGame ? "page" : null)">
+                    @Ui.Icon("plus")<span>Neues Spiel</span>
+                </a>
+            </li>
+            <li><a class="@Cls("/")" href="/" aria-current="@Cur("/")">@Ui.Icon("home")<span>Start</span></a></li>
+            <li><a class="mat-nav__item@(inMyGames ? " is-active" : "")" href="/games" aria-current="@(inMyGames ? "page" : null)">@Ui.Icon("gamepad")<span>Meine Spiele</span></a></li>
+            <li><a class="@Cls("/players")" href="/players" aria-current="@Cur("/players")">@Ui.Icon("users")<span>Spieler</span></a></li>
+        </ul>
+
+        @if (Current.IsAdmin)
+        {
+            <ul class="mat-nav__list">
+                <li class="mat-nav__group" role="presentation">Administration</li>
+                <li><a class="@Cls("/admin/users")" href="/admin/users" aria-current="@Cur("/admin/users")">@Ui.Icon("user-circle")<span>Benutzer</span></a></li>
+                <li><a class="@Cls("/admin/settings")" href="/admin/settings" aria-current="@Cur("/admin/settings")">@Ui.Icon("settings")<span>Einstellungen</span></a></li>
+            </ul>
+        }
+    </nav>
+
+    <div class="mat-nav__foot">
+        <div class="mat-nav__account">
+            <button type="button" class="mat-user" data-menu-toggle="user-menu" aria-haspopup="menu" aria-expanded="false">
+                <span class="mat-avatar" aria-hidden="true">@Ui.Initials(name)</span>
+                <span class="mat-user__text">
+                    <span class="mat-user__name">@name</span>
+                    <span class="mat-user__role">@role</span>
+                </span>
+                @Ui.Icon("chevron-up", "mat-user__chev")
+            </button>
+            <button type="button" class="mat-theme" data-theme-toggle data-theme-state="system" aria-label="Design umschalten" title="Design umschalten"
+                    data-theme-name-system="System" data-theme-name-light="Hell" data-theme-name-dark="Dunkel">
+                <svg class="mat-icon" data-theme-icon="system" aria-hidden="true" focusable="false"><use href="#mat-i-monitor"></use></svg>
+                <svg class="mat-icon" data-theme-icon="light" aria-hidden="true" focusable="false"><use href="#mat-i-sun"></use></svg>
+                <svg class="mat-icon" data-theme-icon="dark" aria-hidden="true" focusable="false"><use href="#mat-i-moon"></use></svg>
+            </button>
+        </div>
+        <div class="mat-nav__version">MatPlay @AppInfo.Version</div>
+    </div>
+</aside>
+
+<div class="mat-menu" id="user-menu" role="menu" aria-label="@name" hidden>
+    <div class="mat-menu__head">
+        <span class="mat-avatar" aria-hidden="true">@Ui.Initials(name)</span>
+        <div><strong>@name</strong><small>@role</small></div>
+    </div>
+    @if (Current.IsAuthenticated)
+    {
+        <a class="mat-menu__item" role="menuitem" href="/account/change-password">@Ui.Icon("key")<span>Passwort ändern</span></a>
+        <div class="mat-menu__sep" role="separator"></div>
+        <form method="post" action="/account/logout">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="mat-menu__item mat-menu__item--danger" role="menuitem">@Ui.Icon("logout")<span>Abmelden</span></button>
+        </form>
+    }
+    else
+    {
+        <a class="mat-menu__item" role="menuitem" href="/account/login">@Ui.Icon("login")<span>Anmelden</span></a>
+        @if (Config.Config.AllowRegistration)
+        {
+            <a class="mat-menu__item" role="menuitem" href="/account/register">@Ui.Icon("user")<span>Registrieren</span></a>
+        }
+    }
+</div>

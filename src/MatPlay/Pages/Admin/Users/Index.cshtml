@@ -11,7 +11,7 @@
     Id = "usersToolbar",
     Action = "/admin/users",
     Search = Model.Q,
-    SearchPlaceholder = "Benutzer suchen …",
+    SearchPlaceholder = "Benutzername oder Anzeigename …",
     Filters =
     [
         new ToolbarFilter
@@ -20,7 +20,7 @@
             Options = [("", "Alle"), (Roles.Admin, "Admin"), (Roles.User, "User")],
         },
     ],
-    SortOptions = [("", "Benutzername"), ("created", "Erstellt")],
+    SortOptions = [("", "Benutzername"), ("created", "Neueste zuerst")],
     Sort = Model.Sort,
 })" />
 
@@ -30,48 +30,67 @@
     <input type="hidden" name="sort" value="@Model.Sort" />
     <input type="hidden" name="p" value="@Model.P" />
 
-    <div class="table-wrap">
-        <table class="table">
-            <thead>
-            <tr>
-                <th class="col-check"></th>
-                <th>Benutzername</th>
-                <th class="col-hide-mobile">Anzeigename</th>
-                <th>Rolle</th>
-                <th class="col-hide-mobile">Erstellt</th>
-                <th class="col-actions"></th>
-            </tr>
-            </thead>
-            <tbody>
-            @foreach (var user in Model.Items)
-            {
-                <tr>
-                    <td class="col-check"><input type="checkbox" name="selected" value="@user.Id" aria-label="@user.Username auswählen" /></td>
-                    <td><a class="table-link" href="/admin/users/edit/@user.Id">@user.Username</a></td>
-                    <td class="col-hide-mobile">@user.DisplayName</td>
-                    <td><span class="badge @(user.Role == Roles.Admin ? "badge-admin" : "badge-user")">@user.Role</span></td>
-                    <td class="col-hide-mobile">@user.CreateDate.ToLocalTime().ToString("dd.MM.yyyy")</td>
-                    <td class="col-actions">
-                        <a class="icon-btn" href="/admin/users/edit/@user.Id" title="Bearbeiten">✏️</a>
-                    </td>
-                </tr>
-            }
-            </tbody>
-        </table>
-    </div>
-
-    <partial name="Controls/_Pagination" model="@(new PaginationModel
+    @if (Model.Items.Count == 0)
     {
-        Id = "usersPagination",
-        Page = Model.P,
-        TotalPages = Model.TotalPages,
-        UrlFor = Model.UrlForPage,
-    })" />
-
-    <div class="action-bar">
-        <a class="btn btn-primary" href="/admin/users/create">＋ Neuer Benutzer</a>
-        <span class="action-gap"></span>
-        <button type="submit" class="btn btn-danger"
-                onclick="return confirm('Ausgewählte Benutzer wirklich löschen?')">🗑 Löschen</button>
-    </div>
+        <div class="mat-empty">
+            <div class="mat-empty__icon">@Ui.Icon("users")</div>
+            <p class="mat-empty__title">Keine Benutzer gefunden.</p>
+        </div>
+    }
+    else
+    {
+        <div class="mat-stack" data-selectable>
+            <div class="mat-bulk" data-bulk-bar hidden role="status">
+                <span class="mat-bulk__count"><strong data-bulk-count>0</strong> ausgewählt</span>
+                <button type="submit" class="mat-btn mat-btn--danger mat-btn--sm" data-confirm="Ausgewählte Benutzer wirklich löschen?" data-confirm-ok="Löschen">
+                    @Ui.Icon("trash")<span>Löschen</span>
+                </button>
+            </div>
+            <div class="mat-table-wrap">
+                <table class="mat-table">
+                    <caption class="mat-sr-only">Benutzer</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col" class="mat-table__select"><input type="checkbox" data-select-all aria-label="Alle Benutzer auswählen" /></th>
+                        <th scope="col">Benutzername</th>
+                        <th scope="col" class="mat-hide-sm">Anzeigename</th>
+                        <th scope="col">Rolle</th>
+                        <th scope="col" class="mat-hide-sm">Erstellt</th>
+                        <th scope="col"><span class="mat-sr-only">Aktionen</span></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var user in Model.Items)
+                    {
+                        <tr>
+                            <td data-label="Auswahl" class="mat-table__select"><input type="checkbox" name="selected" value="@user.Id" data-select-row aria-label="@user.Username auswählen" /></td>
+                            <td data-label="Benutzername"><div class="mat-table__name"><a href="/admin/users/edit/@user.Id">@user.Username</a></div></td>
+                            <td data-label="Anzeigename" class="mat-hide-sm">@user.DisplayName</td>
+                            <td data-label="Rolle"><span class="mat-pill @(user.Role == Roles.Admin ? "mat-pill--error" : "mat-pill--plain")">@user.Role</span></td>
+                            <td data-label="Erstellt" class="mat-hide-sm">@user.CreateDate.ToLocalTime().ToString("dd.MM.yyyy")</td>
+                            <td class="mat-table__cell-actions">
+                                <div class="mat-table__actions">
+                                    <a href="/admin/users/edit/@user.Id" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" title="Bearbeiten" aria-label="@user.Username bearbeiten">@Ui.Icon("edit")</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
 </form>
+
+<partial name="Controls/_Pagination" model="@(new PaginationModel
+{
+    Id = "usersPagination",
+    Page = Model.P,
+    TotalPages = Model.TotalPages,
+    TotalCount = Model.TotalCount,
+    UrlFor = Model.UrlForPage,
+})" />
+
+<div class="mat-actions">
+    <a class="mat-btn mat-btn--primary" href="/admin/users/create">@Ui.Icon("plus")<span>Neuer Benutzer</span></a>
+</div>

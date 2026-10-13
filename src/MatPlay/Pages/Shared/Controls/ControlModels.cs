@@ -1,14 +1,15 @@
 namespace MatPlay.Pages.Shared.Controls;
 
-/// <summary>Modelle der wiederverwendbaren UI-Controls (Toolbar, Pagination, Tabs).</summary>
+/// <summary>Modelle der wiederverwendbaren UI-Controls (Toolbar, Pagination, Tabs) auf Basis des MatUi-Toolkits.</summary>
 public class ListToolbarModel
 {
-    /// <summary>Eindeutige Id, damit mehrere Toolbars auf einer Seite koexistieren.</summary>
+    /// <summary>Eindeutige Id, damit mehrere Toolbars (und ihre Dialoge) auf einer Seite koexistieren.</summary>
     public string Id { get; set; } = "toolbar";
     public string Action { get; set; } = "";
     public string? Search { get; set; }
     public string SearchPlaceholder { get; set; } = "Suchen …";
     public List<ToolbarFilter> Filters { get; set; } = [];
+    /// <summary>Die erste Option ist die Standardsortierung (Button leuchtet nur bei abweichender Wahl).</summary>
     public List<(string Value, string Text)> SortOptions { get; set; } = [];
     public string? Sort { get; set; }
     /// <summary>Zusätzliche Hidden-Felder (z.B. um Filter anderer Controls zu erhalten).</summary>
@@ -28,31 +29,20 @@ public class PaginationModel
     public string Id { get; set; } = "pagination";
     public int Page { get; set; } = 1;
     public int TotalPages { get; set; } = 1;
+    public int TotalCount { get; set; }
     public required Func<int, string> UrlFor { get; set; }
 }
 
-/// <summary>Durchsuchbares Custom-Dropdown; öffnet sich mobil als Dialog. JS-Logik in site.js (MPSelect).</summary>
-public class SearchSelectModel
+/// <summary>Button-Zeile unter Formularen: Speichern, Zurück, Abstand, Löschen (FORM-01).</summary>
+public class FormActionsModel
 {
-    public string Id { get; set; } = "searchSelect";
-    /// <summary>Id des Hidden-Inputs, der den Wert hält (für JS-Zugriff und Change-Events).</summary>
-    public string HiddenId { get; set; } = "searchSelectValue";
-    /// <summary>Optionaler name des Hidden-Inputs, damit der Wert mitgepostet wird.</summary>
-    public string? HiddenName { get; set; }
-    public string Placeholder { get; set; } = "Bitte wählen …";
-    public string SearchPlaceholder { get; set; } = "Suchen …";
-    public string? Selected { get; set; }
-    public List<SearchSelectOption> Options { get; set; } = [];
-}
-
-public class SearchSelectOption
-{
-    public string Value { get; set; } = "";
-    /// <summary>Anzeige in Trigger und Liste (z.B. Icon + Name).</summary>
-    public string Label { get; set; } = "";
-    public string? Description { get; set; }
-    /// <summary>Kleingeschriebener Suchtext; leer = aus Label abgeleitet.</summary>
-    public string? SearchText { get; set; }
+    public string SaveText { get; set; } = "Speichern";
+    public string SaveIcon { get; set; } = "save";
+    public string? BackUrl { get; set; }
+    /// <summary>Name des Page-Handlers (z.B. "Delete"); leer = kein Löschen-Button.</summary>
+    public string? DeleteHandler { get; set; }
+    public string DeleteConfirm { get; set; } = "Wirklich löschen?";
+    public Dictionary<string, string> DeleteRouteValues { get; set; } = [];
 }
 
 public class TabsModel

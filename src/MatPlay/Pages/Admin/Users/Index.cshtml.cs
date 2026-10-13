@@ -17,11 +17,13 @@ public class IndexModel(AppDbContext db, CurrentContext current) : PageModel
 
     public List<User> Items { get; private set; } = [];
     public int TotalPages { get; private set; } = 1;
+    public int TotalCount { get; private set; }
 
     public async Task OnGetAsync()
     {
         var query = BuildQuery();
         var total = await query.CountAsync();
+        TotalCount = total;
         TotalPages = Math.Max(1, (int)Math.Ceiling(total / (double)PageSize));
         P = Math.Clamp(P, 1, TotalPages);
         Items = await query.Skip((P - 1) * PageSize).Take(PageSize).ToListAsync();

@@ -1,35 +1,40 @@
 @page "/admin/settings"
 @model MatPlay.Pages.Admin.SettingsModel
+@using MatPlay.Pages.Shared.Controls
 @{
     ViewData["Title"] = "Einstellungen";
+    ViewData["Width"] = "narrow";
     ViewData["Breadcrumb"] = new List<(string, string?)> { ("Administration", null), ("Einstellungen", null) };
 }
 
 @if (Model.Saved)
 {
-    <div class="alert alert-info">✔ Einstellungen gespeichert.</div>
+    <div class="mat-alert mat-alert--success" role="status">@Ui.Icon("check-circle")<span>Einstellungen gespeichert.</span></div>
 }
 
-<form method="post" class="form">
-    <fieldset class="form-section">
-        <legend>Benutzer</legend>
-        <label class="form-check">
-            <input asp-for="AllowRegistration" type="checkbox" />
-            <span>Selbst-Registrierung erlauben</span>
-        </label>
-    </fieldset>
-
-    <fieldset class="form-section">
-        <legend>Spielerprofile</legend>
-        <label class="form-field">
-            <span>Länge der automatischen Kürzel (1–4)</span>
-            <input asp-for="PlayerCodeLength" type="number" min="1" max="4" />
-        </label>
-        <p class="form-hint">Gilt für neu angelegte Spieler; bestehende Kürzel bleiben unverändert und können pro Spieler manuell angepasst werden.</p>
-    </fieldset>
-
-    <div class="action-bar">
-        <button type="submit" class="btn btn-primary">💾 Speichern</button>
-        <a class="btn btn-secondary" href="/">‹ Zurück</a>
+<form method="post" class="mat-form" novalidate>
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">Benutzer</h2></div>
+        <div class="mat-card__body">
+            <label class="mat-check">
+                <input asp-for="AllowRegistration" type="checkbox" />
+                <span class="mat-check__text">Selbst-Registrierung erlauben</span>
+            </label>
+        </div>
     </div>
+
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">Spielerprofile</h2></div>
+        <div class="mat-card__body">
+            <div class="mat-field">
+                <label class="mat-label" for="PlayerCodeLength">Länge der automatischen Kürzel (1–4)</label>
+                <div class="mat-stepper" data-stepper>
+                    <input asp-for="PlayerCodeLength" type="number" class="mat-input" min="1" max="4" step="1" />
+                </div>
+                <span class="mat-hint">Gilt für neu angelegte Spieler; bestehende Kürzel bleiben unverändert und lassen sich pro Spieler manuell anpassen.</span>
+            </div>
+        </div>
+    </div>
+
+    <partial name="Controls/_FormActions" model="@(new FormActionsModel { BackUrl = "/" })" />
 </form>

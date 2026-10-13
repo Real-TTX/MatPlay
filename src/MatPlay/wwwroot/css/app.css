@@ -1,0 +1,180 @@
+/* ==========================================================================
+   MatPlay – app-specific styles on top of the MatUi toolkit.
+   Only what the toolkit does not ship: game covers, the player cards of the
+   play views and the score sheets (Qwixx, Kniffel). Everything uses --mat-*
+   tokens, so it follows the accent, light and dark. Flat on purpose: no
+   gradients, glow or blur (COLOR-06); lines instead of shadows (SPACE-03).
+   Class prefix: mp-
+   ========================================================================== */
+
+/* ---- Logo ---------------------------------------------------------------- */
+.mp-logo { width: 30px; height: 30px; border-radius: var(--mat-radius); flex: none; }
+.mp-logo--lg { width: 44px; height: 44px; }
+.mat-nav__brand a { display: flex; align-items: center; gap: var(--mat-space-3); }
+
+/* ---- Small helpers ------------------------------------------------------- */
+.mp-h2 { margin: 0; font-size: var(--mat-fs-lg); font-weight: 650; }
+.mp-more { display: inline-flex; align-items: center; gap: var(--mat-space-1); font-size: var(--mat-fs-sm); font-weight: 600; }
+.mp-auth-title { margin: 0 0 var(--mat-space-4); font-size: var(--mat-fs-xl); font-weight: 650; text-align: center; }
+.mp-auth-hint { margin: var(--mat-space-4) 0 0; text-align: center; }
+.mat-page > .mat-stack + .mat-stack { margin-top: var(--mat-space-8); }
+
+/* ---- Game covers (the emoji of a game is its picture, not a UI icon) ----- */
+.mp-cover {
+  flex: none; width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border-radius: var(--mat-radius);
+  background: var(--mat-surface-3);
+  font-size: 1.35rem; line-height: 1;
+}
+.mp-cover--lg { width: 52px; height: 52px; font-size: 1.7rem; }
+.mp-cover .mat-icon { font-size: 1.4rem; color: var(--mat-accent-text); }
+.mp-inline-cover { font-size: 1.1rem; line-height: 1; margin-right: var(--mat-space-2); }
+
+/* ---- Dashboard + catalogue cards ----------------------------------------- */
+.mp-game-card { display: flex; align-items: center; gap: var(--mat-space-3); padding: var(--mat-space-3) var(--mat-space-4); }
+.mp-game-card__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mp-preset { display: flex; flex-direction: column; align-items: flex-start; gap: var(--mat-space-2); padding: var(--mat-space-5); }
+.mp-preset__desc { font-size: var(--mat-fs-sm); flex: 1; }
+.mp-cta { display: inline-flex; align-items: center; gap: var(--mat-space-1); color: var(--mat-accent-text); font-weight: 600; font-size: var(--mat-fs-sm); }
+.mp-preset--wrap { position: relative; padding: 0; }
+.mp-preset__link { display: flex; flex-direction: column; align-items: flex-start; gap: var(--mat-space-2); padding: var(--mat-space-5); height: 100%; color: inherit; text-decoration: none; }
+.mp-preset__link:hover { text-decoration: none; background: var(--mat-surface-2); border-radius: inherit; }
+.mp-fav-form { position: absolute; top: var(--mat-space-2); right: var(--mat-space-2); }
+.mp-fav .mat-icon { color: var(--mat-text-muted); }
+.mp-fav.is-on .mat-icon { color: var(--mat-warning); fill: currentColor; }
+
+/* ---- Forms: player rows and chips ---------------------------------------- */
+.mp-player-row { display: flex; align-items: center; gap: var(--mat-space-2); }
+.mp-player-row .mat-input { flex: 1; min-width: 0; }
+.mp-chip-row { display: flex; flex-wrap: wrap; gap: var(--mat-space-2); }
+.mp-chip.is-used { opacity: .45; }
+
+/* ---- Play view: bar, rules, pins ------------------------------------------ */
+.mp-play-bar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--mat-space-2); }
+.mp-play-bar__spacer { flex: 1 1 0; }
+#wakeLockBtn.is-active { border-color: var(--mat-success); color: var(--mat-success-text); }
+#wakeLockBtn[hidden] { display: none; }
+.mp-rules { margin-bottom: var(--mat-space-4); }
+.mp-rules ul { margin: 0; padding-left: var(--mat-space-5); display: flex; flex-direction: column; gap: var(--mat-space-2); font-size: var(--mat-fs-sm); }
+.mp-pin { display: flex; align-items: center; flex-wrap: wrap; gap: var(--mat-space-3); margin-bottom: var(--mat-space-4); padding: var(--mat-space-3) var(--mat-space-4); border: 1px solid var(--mat-border); border-radius: var(--mat-radius-lg); background: var(--mat-surface); }
+.mp-pin[hidden] { display: none; }
+.mp-pin__label { margin: 0; white-space: nowrap; }
+.mp-pin .mat-picker { flex: 1; min-width: 200px; }
+.mp-actions { display: flex; flex-wrap: wrap; gap: var(--mat-space-2); margin: var(--mat-space-4) 0; }
+.mp-section-title { margin: var(--mat-space-6) 0 var(--mat-space-3); font-size: var(--mat-fs-lg); font-weight: 650; }
+
+/* ---- Play view: player cards --------------------------------------------- */
+.mp-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--mat-gap); }
+.mp-player {
+  display: flex; flex-direction: column; align-items: center; gap: var(--mat-space-1);
+  padding: var(--mat-space-4); text-align: center;
+  border: 1px solid var(--mat-border); border-radius: var(--mat-radius-lg); background: var(--mat-surface);
+}
+.mp-player.is-leader { border-color: var(--mat-accent); }
+.mp-player.is-winner { border-color: var(--mat-success); background: var(--mat-success-bg); }
+.mp-player.is-readonly { opacity: .65; }
+.mp-player__name { font-weight: 650; font-size: var(--mat-fs-lg); overflow-wrap: anywhere; }
+.mp-player__tag { min-height: 1.4em; font-size: var(--mat-fs-sm); font-weight: 650; color: var(--mat-accent-text); }
+.is-winner .mp-player__tag { color: var(--mat-success-text); }
+.mp-total { font-size: var(--mat-fs-3xl); font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.mp-total.is-link { cursor: pointer; }
+.mp-round-tag { font-size: var(--mat-fs-sm); color: var(--mat-text-muted); }
+.mp-steps { display: flex; justify-content: center; gap: var(--mat-space-3); margin-top: var(--mat-space-2); }
+.mp-step { width: 56px; height: 56px; padding: 0; border-radius: var(--mat-radius-lg); }
+.mp-step .mat-icon { font-size: 1.4rem; }
+.mp-entry { display: flex; align-items: center; justify-content: center; gap: var(--mat-space-2); margin-top: var(--mat-space-2); width: 100%; }
+.mp-entry[hidden] { display: none; }
+.mp-entry .mat-input { width: 7.5rem; text-align: center; font-weight: 650; }
+.mp-entry .mat-input--narrow { width: 5.5rem; }
+
+/* ---- Verlauf / log -------------------------------------------------------- */
+.mp-log { list-style: none; margin: 0; padding: 0; border: 1px solid var(--mat-border); border-radius: var(--mat-radius-lg); background: var(--mat-surface); }
+.mp-log li { padding: var(--mat-space-2) var(--mat-space-4); border-bottom: 1px solid var(--mat-border); font-size: var(--mat-fs-sm); }
+.mp-log li:last-child { border-bottom: 0; }
+.mp-log__time { color: var(--mat-text-muted); margin-right: var(--mat-space-2); font-variant-numeric: tabular-nums; }
+.mp-pos { color: var(--mat-success-text); font-weight: 700; }
+.mp-neg { color: var(--mat-danger-text); font-weight: 700; }
+.mp-dim { color: var(--mat-text-muted); font-size: var(--mat-fs-sm); }
+
+/* ---- Info banner of a module (Wizard rounds) ------------------------------ */
+.mp-info { margin-bottom: var(--mat-space-4); padding: var(--mat-space-3) var(--mat-space-4); text-align: center; font-weight: 650; border: 1px solid var(--mat-border); border-radius: var(--mat-radius-lg); background: var(--mat-surface); color: var(--mat-accent-text); }
+
+/* ---- Phase 10 ------------------------------------------------------------- */
+.mp-phase { margin-top: var(--mat-space-1); padding: 2px var(--mat-space-3); border: 1px solid var(--mat-accent); border-radius: var(--mat-radius-pill); font-weight: 700; color: var(--mat-accent-text); background: var(--mat-accent-soft); }
+.mp-phase-desc { font-size: var(--mat-fs-sm); color: var(--mat-text-muted); min-height: 2.4em; }
+.mp-total--md { font-size: var(--mat-fs-2xl); }
+
+/* ---- Munchkin -------------------------------------------------------------- */
+.mp-mk-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--mat-gap); }
+.mp-mk-stat { display: flex; align-items: center; gap: var(--mat-space-3); width: 100%; }
+.mp-mk-label { flex: 0 0 3.5rem; text-align: left; font-weight: 650; font-size: var(--mat-fs-sm); color: var(--mat-text-muted); }
+.mp-mk-value { flex: 1; text-align: center; font-size: var(--mat-fs-2xl); font-weight: 700; font-variant-numeric: tabular-nums; }
+.mp-mk-btn { width: 44px; height: 44px; padding: 0; }
+.mp-mk-hearts { display: flex; align-items: center; flex-wrap: wrap; gap: var(--mat-space-1); width: 100%; }
+.mp-mk-heart { min-width: 32px; min-height: 32px; width: 32px; height: 32px; padding: 0; color: var(--mat-danger); }
+.mp-mk-heart.is-lost { color: var(--mat-text-faint); }
+.mp-mk-heart .mat-icon { font-size: 1.3rem; }
+.mp-mk-heart:not(.is-lost) .mat-icon { fill: currentColor; }
+.mp-mk-dead { color: var(--mat-danger-text); font-weight: 700; }
+.mp-mk-power { width: 100%; margin-top: var(--mat-space-2); padding: var(--mat-space-2) var(--mat-space-3); border: 1px solid var(--mat-border); border-radius: var(--mat-radius); background: var(--mat-surface-2); }
+.mp-mk-power b { color: var(--mat-accent-text); font-size: var(--mat-fs-xl); }
+
+/* ---- Score sheets: Qwixx ---------------------------------------------------- */
+.mp-qx-pad { display: flex; flex-direction: column; gap: var(--mat-space-2); }
+.mp-qx-row { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 3px; padding: var(--mat-space-2); border-radius: var(--mat-radius-lg); background: var(--mat-surface-3); }
+.mp-qx-row.is-red { background: var(--mat-danger-bg); }
+.mp-qx-row.is-yellow { background: var(--mat-warning-bg); }
+.mp-qx-row.is-green { background: var(--mat-success-bg); }
+.mp-qx-row.is-blue { background: var(--mat-info-bg); }
+.mp-qx-cell {
+  --tone: var(--mat-border-strong); --tone-bg: var(--mat-surface-3); --tone-text: var(--mat-text);
+  min-width: 0; width: 100%; height: 42px; padding: 0;
+  display: grid; place-items: center;
+  font: inherit; font-weight: 700; font-size: clamp(.72rem, 3.2vw, .98rem); font-variant-numeric: tabular-nums;
+  color: var(--mat-text); background: var(--mat-surface);
+  border: 1px solid var(--mat-border-strong); border-bottom: 3px solid var(--tone);
+  border-radius: var(--mat-radius); cursor: pointer; user-select: none;
+}
+.mp-qx-cell.c-red { --tone: var(--mat-danger); --tone-bg: var(--mat-danger-bg); --tone-text: var(--mat-danger-text); }
+.mp-qx-cell.c-yellow { --tone: var(--mat-warning); --tone-bg: var(--mat-warning-bg); --tone-text: var(--mat-warning-text); }
+.mp-qx-cell.c-green { --tone: var(--mat-success); --tone-bg: var(--mat-success-bg); --tone-text: var(--mat-success-text); }
+.mp-qx-cell.c-blue { --tone: var(--mat-info); --tone-bg: var(--mat-info-bg); --tone-text: var(--mat-info-text); }
+.mp-qx-cell.is-checked { background: var(--tone-bg); border-color: var(--tone); color: var(--tone-text); text-decoration: line-through; text-decoration-thickness: 2px; }
+.mp-qx-cell.is-disabled { opacity: .35; cursor: not-allowed; }
+.mp-qx-cell.is-lock { cursor: default; }
+.mp-qx-cell.is-lock.is-checked { text-decoration: none; }
+.mp-qx-cell .mat-icon { font-size: 1rem; }
+.mp-qx-misses { display: flex; align-items: center; gap: var(--mat-space-2); padding: var(--mat-space-2); }
+.mp-qx-misses .mp-qx-cell { width: 42px; flex: none; }
+.mp-qx-misses .mp-qx-cell.is-checked { background: var(--mat-danger-bg); border-color: var(--mat-danger); color: var(--mat-danger-text); text-decoration: none; }
+.mp-qx-total, .mp-kn-total { margin-top: var(--mat-space-1); font-size: var(--mat-fs-xl); font-weight: 700; text-align: right; color: var(--mat-accent-text); }
+
+/* ---- Score sheets: Kniffel -------------------------------------------------- */
+.mp-kn-pad { max-width: 560px; }
+.mp-kn-section { margin-bottom: var(--mat-space-3); padding: var(--mat-space-2) var(--mat-space-4); border: 1px solid var(--mat-border); border-radius: var(--mat-radius-lg); background: var(--mat-surface); }
+.mp-kn-section h3 { margin: var(--mat-space-2) 0; font-size: var(--mat-fs-md); color: var(--mat-accent-text); }
+.mp-kn-row { display: flex; align-items: center; gap: var(--mat-space-2); min-height: 48px; border-bottom: 1px solid var(--mat-border); }
+.mp-kn-row:last-child { border-bottom: 0; }
+.mp-kn-label { flex: 1; font-weight: 600; }
+.mp-kn-controls { display: flex; align-items: center; gap: var(--mat-space-2); }
+.mp-kn-controls .mat-input { width: 5.5rem; text-align: center; font-weight: 650; }
+.mp-kn-value { min-width: 52px; padding: var(--mat-space-1) var(--mat-space-3); font: inherit; font-weight: 700; font-size: var(--mat-fs-lg); text-align: center; color: var(--mat-text); background: var(--mat-accent-soft); border: 1px solid var(--mat-accent); border-radius: var(--mat-radius); cursor: pointer; }
+.mp-kn-value.is-struck { color: var(--mat-text-muted); background: var(--mat-surface-3); border-color: var(--mat-border); }
+.mp-kn-value.is-open { cursor: default; color: var(--mat-text-faint); background: transparent; border-color: var(--mat-border); }
+.mp-kn-subtotal { margin-bottom: var(--mat-space-3); padding: var(--mat-space-2) var(--mat-space-4); font-size: var(--mat-fs-sm); color: var(--mat-text-muted); border-radius: var(--mat-radius); background: var(--mat-surface-3); }
+
+/* ---- Small screens ---------------------------------------------------------- */
+@media (max-width: 560px) {
+  /* Play bar: icon-only buttons (titles carry the names), only the status pill stays, so it fits one row */
+  .mp-play-bar .mp-lbl { display: none; }
+  .mp-play-bar > .mat-pill:first-child { display: none; }
+  .mp-play-bar .mat-btn { min-width: var(--mat-control-h); padding-inline: var(--mat-space-2); justify-content: center; }
+}
+@media (max-width: 600px) {
+  .mp-board, .mp-mk-board { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .mp-board.is-wide, .mp-mk-board { grid-template-columns: 1fr; }
+  .mp-total { font-size: var(--mat-fs-2xl); }
+  .mp-kn-controls .mat-input { width: 4.5rem; }
+  .mp-qx-cell { height: 40px; border-radius: var(--mat-radius-sm); }
+}

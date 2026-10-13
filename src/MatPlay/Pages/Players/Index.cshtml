@@ -3,7 +3,7 @@
 @using MatPlay.Pages.Shared.Controls
 @{
     ViewData["Title"] = "Spieler";
-    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Spieler", null) };
+    ViewData["Description"] = "Gespeicherte Mitspieler mit Kürzel, Farbe und Spiel-Historie.";
 }
 
 <partial name="Controls/_ListToolbar" model="@(new ListToolbarModel
@@ -21,56 +21,73 @@
     <input type="hidden" name="sort" value="@Model.Sort" />
     <input type="hidden" name="p" value="@Model.P" />
 
-    <div class="table-wrap">
-        <table class="table">
-            <thead>
-            <tr>
-                <th class="col-check"></th>
-                <th>Name</th>
-                <th>Kürzel</th>
-                <th>Spiele</th>
-                <th class="col-hide-mobile">Zuletzt gespielt</th>
-                <th class="col-actions"></th>
-            </tr>
-            </thead>
-            <tbody>
-            @if (Model.Items.Count == 0)
-            {
-                <tr><td colspan="6" class="table-empty">Noch keine gespeicherten Spieler – beim Erstellen eines Spiels werden sie automatisch angelegt. 🎲</td></tr>
-            }
-            @foreach (var player in Model.Items)
-            {
-                <tr>
-                    <td class="col-check"><input type="checkbox" name="selected" value="@player.Id" aria-label="@player.Name auswählen" /></td>
-                    <td>
-                        <a class="table-link" href="/players/edit/@player.Id">
-                            <span class="color-dot" style="background:@player.Color"></span> @player.Name
-                        </a>
-                    </td>
-                    <td><span class="code-badge" style="border-color:@player.Color; color:@player.Color">@player.Code</span></td>
-                    <td>@(Model.GameCounts.GetValueOrDefault(player.Id))</td>
-                    <td class="col-hide-mobile">@player.LastUsedDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
-                    <td class="col-actions">
-                        <a class="icon-btn" href="/players/edit/@player.Id" title="Details & Historie">✏️</a>
-                    </td>
-                </tr>
-            }
-            </tbody>
-        </table>
-    </div>
-
-    <partial name="Controls/_Pagination" model="@(new PaginationModel
+    @if (Model.Items.Count == 0)
     {
-        Id = "playersPagination",
-        Page = Model.P,
-        TotalPages = Model.TotalPages,
-        UrlFor = Model.UrlForPage,
-    })" />
-
-    <div class="action-bar">
-        <a class="btn btn-primary" href="/players/create">＋ Neuer Spieler</a>
-        <span class="action-gap"></span>
-        <button type="submit" class="btn btn-danger"
-                onclick="return confirm('Ausgewählte Spieler wirklich löschen? Die Spiel-Historie bleibt erhalten.')">🗑 Löschen</button>
-    </div>
+        <div class="mat-empty">
+            <div class="mat-empty__icon">@Ui.Icon("users")</div>
+            <p class="mat-empty__title">Noch keine gespeicherten Spieler.</p>
+            <p class="mat-muted">Beim Erstellen eines Spiels werden sie automatisch angelegt.</p>
+        </div>
+    }
+    else
+    {
+        <div class="mat-stack" data-selectable>
+            <div class="mat-bulk" data-bulk-bar hidden role="status">
+                <span class="mat-bulk__count"><strong data-bulk-count>0</strong> ausgewählt</span>
+                <button type="submit" class="mat-btn mat-btn--danger mat-btn--sm" data-confirm="Ausgewählte Spieler wirklich löschen? Die Spiel-Historie bleibt erhalten." data-confirm-ok="Löschen">
+                    @Ui.Icon("trash")<span>Löschen</span>
+                </button>
+            </div>
+            <div class="mat-table-wrap">
+                <table class="mat-table">
+                    <caption class="mat-sr-only">Gespeicherte Spieler</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col" class="mat-table__select"><input type="checkbox" data-select-all aria-label="Alle Spieler auswählen" /></th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Kürzel</th>
+                        <th scope="col" class="mat-num">Spiele</th>
+                        <th scope="col" class="mat-hide-sm">Zuletzt gespielt</th>
+                        <th scope="col"><span class="mat-sr-only">Aktionen</span></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var player in Model.Items)
+                    {
+                        <tr>
+                            <td data-label="Auswahl" class="mat-table__select"><input type="checkbox" name="selected" value="@player.Id" data-select-row aria-label="@player.Name auswählen" /></td>
+                            <td data-label="Name">
+                                <div class="mat-table__name">
+                                    <span class="mat-dot" data-colour="@player.Color" aria-hidden="true"></span>
+                                    <a href="/players/edit/@player.Id">@player.Name</a>
+                                </div>
+                            </td>
+                            <td data-label="Kürzel"><span class="mat-tag" data-colour="@player.Color">@player.Code</span></td>
+                            <td data-label="Spiele" class="mat-num">@(Model.GameCounts.GetValueOrDefault(player.Id))</td>
+                            <td data-label="Zuletzt gespielt" class="mat-hide-sm">@player.LastUsedDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                            <td class="mat-table__cell-actions">
+                                <div class="mat-table__actions">
+                                    <a href="/players/edit/@player.Id" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" title="Details und Historie" aria-label="@player.Name bearbeiten">@Ui.Icon("edit")</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
 </form>
+
+<partial name="Controls/_Pagination" model="@(new PaginationModel
+{
+    Id = "playersPagination",
+    Page = Model.P,
+    TotalPages = Model.TotalPages,
+    TotalCount = Model.TotalCount,
+    UrlFor = Model.UrlForPage,
+})" />
+
+<div class="mat-actions">
+    <a class="mat-btn mat-btn--primary" href="/players/create">@Ui.Icon("plus")<span>Neuer Spieler</span></a>
+</div>

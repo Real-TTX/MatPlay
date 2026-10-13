@@ -1,87 +1,83 @@
 @page "/players/edit/{id:long}"
 @model MatPlay.Pages.Players.EditModel
+@using MatPlay.Pages.Shared.Controls
 @{
     ViewData["Title"] = "Spieler bearbeiten";
+    ViewData["Width"] = "narrow";
     ViewData["Breadcrumb"] = new List<(string, string?)> { ("Spieler", "/players"), (Model.Target?.Name ?? "Bearbeiten", null) };
 }
 
 @if (Model.Error != null)
 {
-    <div class="alert alert-error">@Model.Error</div>
+    <div class="mat-alert mat-alert--danger" role="alert">@Ui.Icon("alert")<span>@Model.Error</span></div>
 }
 
-<form method="post" class="form">
-    <div class="form-grid">
-        <label class="form-field">
-            <span>Name</span>
-            <input asp-for="Name" required maxlength="40" />
-        </label>
-        <label class="form-field">
-            <span>Kürzel (automatisch vergeben, änderbar)</span>
-            <input asp-for="Code" required maxlength="4" />
-        </label>
-        <label class="form-field">
-            <span>Farbe</span>
-            <input asp-for="Color" type="color" class="color-input" />
-        </label>
+<div class="mat-card">
+    <div class="mat-card__body">
+        <form method="post" class="mat-form" novalidate>
+            <div class="mat-form__grid">
+                <div class="mat-field">
+                    <label class="mat-label" for="Name">Name <span class="mat-req" aria-hidden="true">*</span></label>
+                    <input asp-for="Name" class="mat-input" required maxlength="40" data-msg-required="Der Name darf nicht leer sein." />
+                    <span class="mat-error" aria-live="polite"></span>
+                </div>
+                <div class="mat-field">
+                    <label class="mat-label" for="Code">Kürzel <span class="mat-req" aria-hidden="true">*</span></label>
+                    <input asp-for="Code" class="mat-input" required maxlength="4" data-msg-required="Das Kürzel braucht 1 bis 4 Zeichen." />
+                    <span class="mat-error" aria-live="polite"></span>
+                    <span class="mat-hint">Automatisch vergeben, hier änderbar.</span>
+                </div>
+            </div>
+            <div class="mat-field">
+                <label class="mat-label" for="Color">Farbe</label>
+                <div class="mat-picker" data-picker="colour" data-swatches="@string.Join(",", SavedPlayerService.Palette)">
+                    <input class="mat-picker__input" id="Color" name="Color" value="@Model.Color" />
+                </div>
+            </div>
+            <partial name="Controls/_FormActions" model="@(new FormActionsModel
+            {
+                BackUrl = "/players",
+                DeleteHandler = "Delete",
+                DeleteConfirm = "Diesen Spieler wirklich löschen? Die Spiel-Historie bleibt erhalten.",
+            })" />
+        </form>
+        <partial name="Controls/_DeleteForm" model="@(new FormActionsModel { DeleteHandler = "Delete" })" />
     </div>
-    <div class="chip-row color-palette">
-        @foreach (var color in SavedPlayerService.Palette)
-        {
-            <button type="button" class="swatch" style="background:@color" data-color="@color"
-                    title="@color" aria-label="Farbe @color wählen"></button>
-        }
-    </div>
-    <div class="action-bar">
-        <button type="submit" class="btn btn-primary">💾 Speichern</button>
-        <a class="btn btn-secondary" href="/players">‹ Zurück</a>
-        <span class="action-gap"></span>
-        <button type="submit" asp-page-handler="delete" class="btn btn-danger"
-                onclick="return confirm('Diesen Spieler wirklich löschen? Die Spiel-Historie bleibt erhalten.')">🗑 Löschen</button>
-    </div>
-</form>
+</div>
 
-<section class="player-history">
-    <h3>🎮 Gespielte Spiele (@Model.Games.Count)</h3>
-    <div class="table-wrap">
-        <table class="table">
-            <thead>
-            <tr>
-                <th>Spiel</th>
-                <th class="col-hide-mobile">Modul</th>
-                <th>Status</th>
-                <th class="col-hide-mobile">Zuletzt aktiv</th>
-            </tr>
-            </thead>
-            <tbody>
-            @if (Model.Games.Count == 0)
-            {
-                <tr><td colspan="4" class="table-empty">Noch keine Spiele mit diesem Spieler.</td></tr>
-            }
-            @foreach (var game in Model.Games)
-            {
-                var module = ModuleRegistry.GetModule(game.ModuleKey);
+<section class="mat-stack" aria-labelledby="history-title">
+    <h2 class="mp-h2" id="history-title">Gespielte Spiele (@Model.Games.Count)</h2>
+    @if (Model.Games.Count == 0)
+    {
+        <p class="mat-muted">Noch keine Spiele mit diesem Spieler.</p>
+    }
+    else
+    {
+        <div class="mat-table-wrap">
+            <table class="mat-table">
+                <caption class="mat-sr-only">Spiele von @Model.Target?.Name</caption>
+                <thead>
                 <tr>
-                    <td><a class="table-link" href="/play/@game.ShareToken">@(module?.Icon ?? "🎮") @game.Name</a></td>
-                    <td class="col-hide-mobile">@(module?.Name ?? game.ModuleKey)</td>
-                    <td>
-                        <span class="badge @(game.Status == GameStatus.Running ? "badge-live" : "badge-done")">
-                            @(game.Status == GameStatus.Running ? "Läuft" : "Beendet")
-                        </span>
-                    </td>
-                    <td class="col-hide-mobile">@game.UpdateDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                    <th scope="col">Spiel</th>
+                    <th scope="col" class="mat-hide-sm">Modul</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" class="mat-hide-sm">Zuletzt aktiv</th>
                 </tr>
-            }
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                @foreach (var game in Model.Games)
+                {
+                    var module = ModuleRegistry.GetModule(game.ModuleKey);
+                    var running = game.Status == GameStatus.Running;
+                    <tr>
+                        <td data-label="Spiel"><div class="mat-table__name"><span class="mp-inline-cover" aria-hidden="true">@ModuleRegistry.IconFor(game.ModuleKey, game.PresetKey)</span><a href="/play/@game.ShareToken">@game.Name</a></div></td>
+                        <td data-label="Modul" class="mat-hide-sm">@(module?.Name ?? game.ModuleKey)</td>
+                        <td data-label="Status"><span class="mat-pill @(running ? "mat-pill--ok" : "mat-pill--plain")">@(running ? "Läuft" : "Beendet")</span></td>
+                        <td data-label="Zuletzt aktiv" class="mat-hide-sm">@game.UpdateDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
 </section>
-
-@section Scripts {
-    <script>
-        document.querySelector('.color-palette').addEventListener('click', e => {
-            const swatch = e.target.closest('.swatch');
-            if (swatch) document.getElementById('Color').value = swatch.dataset.color;
-        });
-    </script>
-}

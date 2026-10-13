@@ -1,0 +1,35 @@
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
+@{
+    var title = ViewData["Title"] as string;
+}
+<!DOCTYPE html>
+<html lang="de" data-app="matplay" @Ui.ToolkitTexts>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>@(string.IsNullOrEmpty(title) ? "MatPlay" : title + " · MatPlay")</title>
+    <script src="~/matui/matui.boot.js"></script>
+    <link rel="stylesheet" href="~/matui/matui.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+    <partial name="_PwaHead" />
+</head>
+<body>
+    <a class="mat-skip" href="#main">Zum Inhalt springen</a>
+    @Ui.Sprite(Env.WebRootPath)
+    <main class="mat-auth" id="main">
+        <div class="mat-auth__card">
+            <div class="mat-auth__brand">
+                <img class="mp-logo mp-logo--lg" src="/icons/favicon.svg" width="44" height="44" alt="" />
+                <span class="mat-nav__name">MatPlay</span>
+            </div>
+            @if (!string.IsNullOrEmpty(title))
+            {
+                <h1 class="mp-auth-title">@title</h1>
+            }
+            @RenderBody()
+        </div>
+    </main>
+    <script src="~/matui/matui.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

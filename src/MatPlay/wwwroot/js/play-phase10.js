@@ -4,6 +4,7 @@
     const board = document.getElementById('phase10Board');
     const history = document.getElementById('phase10History');
     const table = document.getElementById('phase10Table');
+    const { icon, escapeHtml } = MatPlayCore;
 
     const PHASES = [
         'Zwei Drillinge',
@@ -31,8 +32,15 @@
         return playerRounds(player).reduce((sum, r) => sum + r.points, 0);
     }
 
+    function textEl(tag, className, text) {
+        const node = document.createElement(tag);
+        node.className = className;
+        node.textContent = text;
+        return node;
+    }
+
     function render(state) {
-        if (!state.players.length) { board.innerHTML = '<p class="form-hint">Noch keine Spieler.</p>'; return; }
+        if (!state.players.length) { board.innerHTML = '<p class="mat-muted">Noch keine Spieler.</p>'; return; }
         const running = state.status === 0;
 
         // Gewinner: Phase 10 geschafft; bei mehreren die wenigsten Punkte
@@ -59,69 +67,48 @@
                 && phase === bestPhase && points === bestPoints;
 
             const card = document.createElement('div');
-            card.className = 'counter-card' + (winner ? ' winner' : leader ? ' leader' : '')
-                + (canEdit ? '' : ' readonly');
+            card.className = 'mp-player' + (winner ? ' is-winner' : leader ? ' is-leader' : '')
+                + (canEdit ? '' : ' is-readonly');
 
-            const name = document.createElement('div');
-            name.className = 'counter-name';
-            name.textContent = player.name;
-            card.appendChild(name);
-
-            const tag = document.createElement('div');
-            tag.className = 'counter-winner-tag';
-            tag.textContent = winner ? '🏆 GEWONNEN!' : leader ? '⭐ Führt' : '';
-            card.appendChild(tag);
-
-            const phaseEl = document.createElement('div');
-            phaseEl.className = 'phase-badge';
-            phaseEl.textContent = phase > 10 ? '✔ Alle Phasen!' : `Phase ${phase}`;
-            card.appendChild(phaseEl);
-
-            if (phase <= 10) {
-                const desc = document.createElement('div');
-                desc.className = 'phase-desc';
-                desc.textContent = PHASES[phase - 1];
-                card.appendChild(desc);
-            }
-
-            const pointsEl = document.createElement('div');
-            pointsEl.className = 'counter-total phase-points';
-            pointsEl.textContent = points;
+            card.appendChild(textEl('div', 'mp-player__name', player.name));
+            card.appendChild(textEl('div', 'mp-player__tag', winner ? 'Gewonnen!' : leader ? 'Führt' : ''));
+            card.appendChild(textEl('div', 'mp-phase', phase > 10 ? 'Alle Phasen geschafft' : `Phase ${phase}`));
+            card.appendChild(textEl('div', 'mp-phase-desc', phase <= 10 ? PHASES[phase - 1] : ''));
+            const pointsEl = textEl('div', 'mp-total mp-total--md', String(points));
             pointsEl.title = 'Minuspunkte gesamt';
             card.appendChild(pointsEl);
 
             if (running && canEdit && phase <= 10) {
-                const roundTag = document.createElement('div');
-                roundTag.className = 'counter-round-tag';
-                roundTag.textContent = `Runde ${rounds.length + 1}`;
-                card.appendChild(roundTag);
+                card.appendChild(textEl('div', 'mp-round-tag', `Runde ${rounds.length + 1}`));
 
                 const doneLabel = document.createElement('label');
-                doneLabel.className = 'form-check phase-done';
+                doneLabel.className = 'mat-check';
                 const done = document.createElement('input');
                 done.type = 'checkbox';
-                const doneText = document.createElement('span');
-                doneText.textContent = 'Phase geschafft';
-                doneLabel.append(done, doneText);
+                doneLabel.append(done, textEl('span', 'mat-check__text', 'Phase geschafft'));
                 card.appendChild(doneLabel);
 
                 const form = document.createElement('div');
-                form.className = 'counter-round-form';
+                form.className = 'mp-entry';
                 const input = document.createElement('input');
                 input.type = 'number';
+                input.className = 'mat-input';
                 input.inputMode = 'numeric';
                 input.min = 0;
                 input.placeholder = 'Minuspunkte';
                 input.setAttribute('aria-label', `Punkte für ${player.name}`);
                 const btn = document.createElement('button');
-                btn.className = 'btn btn-primary btn-sm';
-                btn.textContent = '✔';
-                btn.title = 'Runde eintragen';
+                btn.type = 'button';
+                btn.className = 'mat-btn mat-btn--primary mat-btn--icon';
+                btn.innerHTML = icon('check');
+                btn.setAttribute('aria-label', 'Runde eintragen');
                 const submit = () => {
                     const value = parseInt(input.value, 10);
                     if (Number.isNaN(value) || value < 0) return;
-                    const next = { rounds: [...rounds, { points: value, done: done.checked }] };
-                    MatPlayCore.action('/player-state', { playerId: player.id, state: next });
+                    MatPlayCore.action('/player-state', {
+                        playerId: player.id,
+                        state: { rounds: [...rounds, { points: value, done: done.checked }] },
+                    });
                 };
                 btn.addEventListener('click', submit);
                 input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
@@ -131,13 +118,11 @@
 
             if (running && canEdit && rounds.length > 0) {
                 const undo = document.createElement('button');
-                undo.className = 'btn btn-ghost btn-sm';
-                undo.textContent = '↩️ Letzte Runde';
+                undo.type = 'button';
+                undo.className = 'mat-btn mat-btn--ghost mat-btn--sm';
+                undo.innerHTML = icon('restore') + '<span>Letzte Runde</span>';
                 undo.addEventListener('click', () => {
-                    MatPlayCore.action('/player-state', {
-                        playerId: player.id,
-                        state: { rounds: rounds.slice(0, -1) },
-                    });
+                    MatPlayCore.action('/player-state', { playerId: player.id, state: { rounds: rounds.slice(0, -1) } });
                 });
                 card.appendChild(undo);
             }
@@ -152,25 +137,19 @@
         if (played === 0) { history.hidden = true; return; }
         history.hidden = false;
 
-        let html = '<thead><tr><th>Runde</th>' +
-            state.players.map(p => `<th>${escapeHtml(p.name)}</th>`).join('') + '</tr></thead><tbody>';
+        let html = '<thead><tr><th scope="col">Runde</th>' +
+            state.players.map(p => `<th scope="col" class="mat-num">${escapeHtml(p.name)}</th>`).join('') + '</tr></thead><tbody>';
         for (let r = 0; r < played; r++) {
-            html += `<tr><td>${r + 1}</td>`;
+            html += `<tr><td data-label="Runde">${r + 1}</td>`;
             for (const p of state.players) {
                 const entry = playerRounds(p)[r];
-                if (!entry) { html += '<td>–</td>'; continue; }
-                html += `<td>${entry.points}` +
-                    ` <span class="${entry.done ? 'log-value pos' : 'log-round'}">${entry.done ? '✔ Phase' : '✖'}</span></td>`;
+                if (!entry) { html += `<td data-label="${escapeHtml(p.name)}" class="mat-num">–</td>`; continue; }
+                html += `<td data-label="${escapeHtml(p.name)}" class="mat-num">${entry.points} ` +
+                    `<span class="${entry.done ? 'mp-pos' : 'mp-dim'}">${entry.done ? 'Phase geschafft' : 'nicht geschafft'}</span></td>`;
             }
             html += '</tr>';
         }
         table.innerHTML = html + '</tbody>';
-    }
-
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
 
     MatPlayCore.init(render);

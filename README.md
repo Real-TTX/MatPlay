@@ -1,6 +1,6 @@
 # 🎮 MatPlay
 
-Der Neon-Helfer für den Spieleabend: Punkte zählen für Brett- und Kartenspiele –
+Der Helfer für den Spieleabend: Punkte zählen für Brett- und Kartenspiele –
 auf einem Handy oder per geteiltem Link auf mehreren Geräten gleichzeitig.
 Als PWA installierbar, mit Wake-Lock („Display bleibt an") am Spieltisch.
 
@@ -25,7 +25,7 @@ Als PWA installierbar, mit Wake-Lock („Display bleibt an") am Spieltisch.
 - ⚙️ **Globale Einstellungen** – Administration → Einstellungen (Registrierung, Kürzel-Länge)
 - 👤 **Anonym spielbar** – Spiele erstellen ohne Konto; lokale Anmeldung mit Rollen (Admin, User, Anonym)
 - 📱 **PWA** – installierbar, Offline-Shell, Screen Wake Lock (Android & iOS ≥ 16.4)
-- 🌗 **Themes** – System / Hell / Dunkel, Neon-Gaming-Look
+- 🌗 **Mat-Design** – nutzt das MatUi-Toolkit der Mat-Apps (System / Hell / Dunkel, flach, barrierearm)
 
 ## Schnellstart
 
@@ -52,6 +52,20 @@ Einfach den Container neu bauen und den Stack neu deployen:
 ```bash
 docker compose -f docker-compose.dev.yml up -d --build
 ```
+
+## Design (MatUi)
+
+MatPlay folgt dem Mat-Design-System (Projekt *MatDesign*, Regelwerk + Toolkit). Das Toolkit
+(`matui.css`, `matui.js`, `matui.boot.js`, `matui-icons.svg`) liegt als **Kopie** unter
+`wwwroot/matui/` (`CODE-03`: kopieren, nicht verlinken) und wird per Neu-Kopieren aktualisiert;
+die Version steht in der ersten Zeile von `matui.css` – `node tools/matui-check.js <MatPlay-Ordner>`
+im MatDesign-Repo zeigt, ob die Kopie aktuell ist. Die Akzentfarbe von MatPlay (`#00819b`) ist dort
+registriert (`<html data-app="matplay">`).
+
+Konventionen: Shell, Menü, Toolbar, Pager, Tabellen, Formulare, Dialoge, Picker und Theme-Umschalter
+kommen aus dem Toolkit; eigene Klassen heißen `mp-*` und nutzen nur `--mat-*`-Tokens. Keine
+Inline-Styles/-Skripte, keine `confirm`/`alert`/`prompt` (stattdessen `data-confirm`, `MatUi.confirm`,
+`MatUi.toast`). Icons kommen aus dem Sprite; die Emojis der Spielarten sind deren „Cover“.
 
 ## Stack
 
@@ -81,7 +95,10 @@ src/MatPlay/
 ├── Services/        # Auth/Session, GameService, Modul-Registry, JSON-Config
 ├── Pages/           # Razor Pages (Games, Play, Account, Admin)
 │   └── Shared/Controls/   # Wiederverwendbare Controls: Toolbar, Pagination, Tabs
-└── wwwroot/         # CSS (Neon-Theme), JS (Play-Module), PWA (Manifest, SW, Icons)
+└── wwwroot/
+    ├── matui/       # MatUi-Toolkit (Kopie aus MatDesign, nicht von Hand ändern)
+    ├── css/app.css  # nur App-Spezifisches (Spielkarten, Zettel), Präfix mp-, nur --mat-* Tokens
+    └── js/          # Play-Module, Seiten-Skripte, PWA (Manifest, Service Worker, Icons)
 ```
 
 ### Neues Spielmodul hinzufügen

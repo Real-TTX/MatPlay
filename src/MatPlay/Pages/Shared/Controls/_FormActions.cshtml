@@ -1,0 +1,25 @@
+@model MatPlay.Pages.Shared.Controls.FormActionsModel
+@*
+    Buttons in einer Zeile, positiv -> negativ: Speichern, Zurück, <Abstand>, Löschen (FORM-01).
+    mat-btn-row erzwingt die Reihenfolge; Löschen schickt ein eigenes verstecktes Formular
+    (siehe _DeleteForm) und fragt über den Toolkit-Dialog nach (data-confirm).
+*@
+<div class="mat-btn-row">
+    <button type="submit" class="mat-btn mat-btn--primary">
+        @Ui.Icon(Model.SaveIcon)<span>@Model.SaveText</span>
+    </button>
+    @if (!string.IsNullOrEmpty(Model.BackUrl))
+    {
+        <a href="@Model.BackUrl" class="mat-btn mat-btn--secondary">@Ui.Icon("back")<span>Zurück</span></a>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.DeleteHandler))
+    {
+        <span class="mat-btn-row__spacer"></span>
+        <button type="submit" class="mat-btn mat-btn--danger" formnovalidate
+                form="@($"deleteForm_{Model.DeleteHandler}")"
+                data-confirm="@Model.DeleteConfirm" data-confirm-ok="Löschen">
+            @Ui.Icon("trash")<span>Löschen</span>
+        </button>
+    }
+</div>

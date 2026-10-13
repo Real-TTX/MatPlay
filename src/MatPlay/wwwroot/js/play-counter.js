@@ -4,6 +4,7 @@
     const board = document.getElementById('counterBoard');
     const roundHistory = document.getElementById('roundHistory');
     const roundTable = document.getElementById('roundTable');
+    const { icon, escapeHtml } = MatPlayCore;
 
     function totals(state) {
         const map = new Map(state.players.map(p => [p.id, state.config.startScore || 0]));
@@ -53,60 +54,42 @@
             const canEdit = MatPlayCore.editable(player.id);
 
             const card = document.createElement('div');
-            card.className = 'counter-card' + (winner ? ' winner' : leader ? ' leader' : '')
-                + (canEdit ? '' : ' readonly');
+            card.className = 'mp-player' + (winner ? ' is-winner' : leader ? ' is-leader' : '')
+                + (canEdit ? '' : ' is-readonly');
 
-            const name = document.createElement('div');
-            name.className = 'counter-name';
-            name.textContent = player.name;
-            card.appendChild(name);
-
-            const tag = document.createElement('div');
-            tag.className = 'counter-winner-tag';
-            tag.textContent = winner ? '🏆 GEWONNEN!' : leader ? '⭐ Führt' : '';
-            card.appendChild(tag);
-
-            const totalEl = document.createElement('div');
-            totalEl.className = 'counter-total';
-            totalEl.textContent = total;
+            card.appendChild(el('div', 'mp-player__name', player.name));
+            card.appendChild(el('div', 'mp-player__tag', winner ? 'Gewonnen!' : leader ? 'Führt' : ''));
+            const totalEl = el('div', 'mp-total', String(total));
             card.appendChild(totalEl);
 
             if (running && canEdit) {
                 if (cfg.useRounds) {
                     // Rundenmodus: Punkte am Rundenende eintragen (z.B. Flip 7, Frantic)
                     const nextRound = state.scores.filter(s => s.playerId === player.id).length + 1;
-                    const roundTag = document.createElement('div');
-                    roundTag.className = 'counter-round-tag';
-                    roundTag.textContent = `Runde ${nextRound}`;
-                    card.appendChild(roundTag);
+                    card.appendChild(el('div', 'mp-round-tag', `Runde ${nextRound}`));
                     card.appendChild(entryForm(state, player, total, 'Punkte der Runde'));
                 } else {
-                    const controls = document.createElement('div');
-                    controls.className = 'counter-controls';
-                    const minus = document.createElement('button');
-                    minus.className = 'counter-btn minus';
-                    minus.textContent = '−';
+                    const steps = el('div', 'mp-steps');
+                    const minus = button('mat-btn mat-btn--secondary mp-step', icon('minus'), `${player.name}: minus`);
                     minus.addEventListener('click', () => addScore(state, player, -(cfg.step || 1), total));
-                    const plus = document.createElement('button');
-                    plus.className = 'counter-btn plus';
-                    plus.textContent = '＋';
+                    const plus = button('mat-btn mat-btn--primary mp-step', icon('plus'), `${player.name}: plus`);
                     plus.addEventListener('click', () => addScore(state, player, cfg.step || 1, total));
-                    controls.append(minus, plus);
-                    card.appendChild(controls);
+                    steps.append(minus, plus);
+                    card.appendChild(steps);
 
-                    // Freie Punkteeingabe: einklappbares Feld statt prompt()
+                    // Freie Punkteeingabe: einklappbares Feld
                     const form = entryForm(state, player, total, 'z.B. 15 oder -3');
                     form.hidden = true;
                     const toggle = document.createElement('button');
                     toggle.type = 'button';
-                    toggle.className = 'btn btn-ghost btn-sm counter-entry-toggle';
-                    toggle.textContent = '✎ Punkte eingeben';
+                    toggle.className = 'mat-btn mat-btn--ghost mat-btn--sm';
+                    toggle.innerHTML = icon('edit') + '<span>Punkte eingeben</span>';
                     toggle.addEventListener('click', () => {
                         form.hidden = !form.hidden;
                         if (!form.hidden) form.querySelector('input').focus();
                     });
+                    totalEl.classList.add('is-link');
                     totalEl.title = 'Tippen für eigene Punkteeingabe';
-                    totalEl.style.cursor = 'pointer';
                     totalEl.addEventListener('click', () => toggle.click());
                     card.appendChild(toggle);
                     card.appendChild(form);
@@ -117,6 +100,22 @@
 
         renderRounds(state);
         renderLog(state);
+    }
+
+    function el(tag, className, text) {
+        const node = document.createElement(tag);
+        node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+    }
+
+    function button(className, html, label) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = className;
+        btn.innerHTML = html;
+        btn.setAttribute('aria-label', label);
+        return btn;
     }
 
     function renderLog(state) {
@@ -132,10 +131,10 @@
                 ? new Date(entry.date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
                 : '';
             const value = entry.value > 0 ? `+${entry.value}` : `${entry.value}`;
-            li.innerHTML = `<span class="log-time">${time}</span> ` +
-                `<b>${escapeHtml(names.get(entry.playerId) || '?')}</b> ` +
-                `<span class="log-value ${entry.value >= 0 ? 'pos' : 'neg'}">${value}</span>` +
-                (entry.round > 0 ? ` <span class="log-round">Runde ${entry.round}</span>` : '');
+            li.innerHTML = `<span class="mp-log__time">${time}</span> ` +
+                `<strong>${escapeHtml(names.get(entry.playerId) || '?')}</strong> ` +
+                `<span class="${entry.value >= 0 ? 'mp-pos' : 'mp-neg'}">${value}</span>` +
+                (entry.round > 0 ? ` <span class="mp-dim">Runde ${entry.round}</span>` : '');
             list.appendChild(li);
         }
     }
@@ -154,17 +153,14 @@
     }
 
     function entryForm(state, player, total, placeholder) {
-        const form = document.createElement('div');
-        form.className = 'counter-round-form';
+        const form = el('div', 'mp-entry');
         const input = document.createElement('input');
         input.type = 'number';
+        input.className = 'mat-input';
         input.placeholder = placeholder;
         input.inputMode = 'numeric';
         input.setAttribute('aria-label', `Punkte für ${player.name}`);
-        const btn = document.createElement('button');
-        btn.className = 'btn btn-primary btn-sm';
-        btn.textContent = '✔';
-        btn.title = 'Punkte eintragen';
+        const btn = button('mat-btn mat-btn--primary mat-btn--icon', icon('check'), 'Punkte eintragen');
         const submit = () => {
             const value = parseInt(input.value, 10);
             if (Number.isNaN(value)) return;
@@ -183,23 +179,17 @@
         if (maxRound === 0) { roundHistory.hidden = true; return; }
         roundHistory.hidden = false;
 
-        let html = '<thead><tr><th>Runde</th>' +
-            state.players.map(p => `<th>${escapeHtml(p.name)}</th>`).join('') + '</tr></thead><tbody>';
+        let html = '<thead><tr><th scope="col">Runde</th>' +
+            state.players.map(p => `<th scope="col" class="mat-num">${escapeHtml(p.name)}</th>`).join('') + '</tr></thead><tbody>';
         for (let r = 1; r <= maxRound; r++) {
-            html += `<tr><td>${r}</td>`;
+            html += `<tr><td data-label="Runde">${r}</td>`;
             for (const p of state.players) {
                 const entry = state.scores.find(s => s.playerId === p.id && s.round === r);
-                html += `<td>${entry ? entry.value : '–'}</td>`;
+                html += `<td data-label="${escapeHtml(p.name)}" class="mat-num">${entry ? entry.value : '–'}</td>`;
             }
             html += '</tr>';
         }
         roundTable.innerHTML = html + '</tbody>';
-    }
-
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
 
     document.getElementById('undoBtn').addEventListener('click', () => MatPlayCore.action('/undo', {}));

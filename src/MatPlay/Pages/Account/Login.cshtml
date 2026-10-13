@@ -1,32 +1,33 @@
 @page "/account/login"
 @model MatPlay.Pages.Account.LoginModel
 @{
+    Layout = "_AuthLayout";
     ViewData["Title"] = "Anmelden";
-    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Anmelden", null) };
 }
 
-<div class="auth-card">
-    @if (Model.Error != null)
-    {
-        <div class="alert alert-error">@Model.Error</div>
-    }
-    <form method="post" class="form">
-        <input type="hidden" asp-for="ReturnUrl" />
-        <label class="form-field">
-            <span>Benutzername</span>
-            <input asp-for="Username" required autofocus autocomplete="username" />
-        </label>
-        <label class="form-field">
-            <span>Passwort</span>
-            <input asp-for="Password" type="password" required autocomplete="current-password" />
-        </label>
-        <div class="action-bar">
-            <button type="submit" class="btn btn-primary">🔑 Anmelden</button>
-            @if (Model.AllowRegistration)
-            {
-                <a class="btn btn-secondary" href="/account/register">Registrieren</a>
-            }
-        </div>
-    </form>
-    <p class="form-hint">Ohne Konto? Du kannst Spiele auch als Gast erstellen und teilen. 🎲</p>
-</div>
+@if (Model.Error != null)
+{
+    <div class="mat-alert mat-alert--danger" role="alert">@Ui.Icon("alert")<span>@Model.Error</span></div>
+}
+
+<form method="post" class="mat-form" novalidate>
+    <input type="hidden" asp-for="ReturnUrl" />
+    <div class="mat-field">
+        <label class="mat-label" for="Username">Benutzername</label>
+        <input asp-for="Username" class="mat-input" required autofocus autocomplete="username" data-msg-required="Bitte gib deinen Benutzernamen ein." />
+        <span class="mat-error" aria-live="polite"></span>
+    </div>
+    <div class="mat-field">
+        <label class="mat-label" for="Password">Passwort</label>
+        <input asp-for="Password" type="password" class="mat-input" required autocomplete="current-password" data-msg-required="Bitte gib dein Passwort ein." />
+        <span class="mat-error" aria-live="polite"></span>
+    </div>
+    <div class="mat-btn-row">
+        <button type="submit" class="mat-btn mat-btn--primary">@Ui.Icon("login")<span>Anmelden</span></button>
+        @if (Model.AllowRegistration)
+        {
+            <a class="mat-btn mat-btn--secondary" href="/account/register">Registrieren</a>
+        }
+    </div>
+</form>
+<p class="mat-muted mat-small mp-auth-hint">Ohne Konto? Du kannst Spiele auch als Gast erstellen und teilen.</p>

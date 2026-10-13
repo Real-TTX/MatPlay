@@ -3,252 +3,170 @@
 @using MatPlay.Pages.Shared.Controls
 @{
     ViewData["Title"] = "Neues Spiel";
-    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Meine Spiele", "/games"), ("Neues Spiel", null) };
+    ViewData["Width"] = "narrow";
+    ViewData["Breadcrumb"] = new List<(string, string?)> { ("Meine Spiele", "/games"), ("Neues Spiel", "/games/new"), ("Einstellungen", null) };
+    var players = Model.Players.Count > 0 ? Model.Players : new List<string> { "" };
 }
 
 @if (Model.Error != null)
 {
-    <div class="alert alert-error">@Model.Error</div>
+    <div class="mat-alert mat-alert--danger" role="alert">@Ui.Icon("alert")<span>@Model.Error</span></div>
 }
 
-<form method="post" class="form" id="createForm">
-    <div class="form-field">
-        <span>Preset</span>
-        <partial name="Controls/_SearchSelect" model="@(new SearchSelectModel
-        {
-            Id = "presetPicker",
-            HiddenId = "presetSelect",
-            HiddenName = "Preset",
-            Placeholder = "🛠 Eigenes Spiel",
-            SearchPlaceholder = "Preset suchen (z.B. Qwixx, Frantic) …",
-            Selected = Model.Preset,
-            Options = new List<SearchSelectOption>
-                {
-                    new() { Value = "", Label = "🛠 Eigenes Spiel", Description = "Modul und Einstellungen selbst wählen", SearchText = "eigenes spiel custom" },
-                }
-                .Concat(ModuleRegistry.Presets.Select(p => new SearchSelectOption
-                {
-                    Value = p.Key,
-                    Label = $"{p.Icon} {p.Name}",
-                    Description = p.Description,
-                    SearchText = (p.Name + " " + p.Description).ToLowerInvariant(),
-                })).ToList(),
-        })" />
-    </div>
+<form method="post" class="mat-form" id="createForm" novalidate data-presets="@Model.PresetsJson">
+    <div class="mat-card">
+        <div class="mat-card__body mat-stack">
+            <div class="mat-field">
+                <label class="mat-label" for="Preset">Preset</label>
+                <div class="mat-picker" data-picker="select" data-search data-clearable data-placeholder="Eigenes Spiel (kein Preset)">
+                    <input class="mat-picker__input" id="Preset" name="Preset" value="@Model.Preset" />
+                    <div class="mat-picker__options" hidden>
+                        @foreach (var preset in ModuleRegistry.Presets)
+                        {
+                            <button type="button" class="mat-picker__option" data-value="@preset.Key">
+                                <span class="mat-picker__text">
+                                    <span class="mat-picker__name">@preset.Icon @preset.Name</span>
+                                    <span class="mat-picker__desc">@preset.Description</span>
+                                </span>
+                            </button>
+                        }
+                    </div>
+                </div>
+                <span class="mat-hint">Übernimmt Modul und Einstellungen – eingetragene Spieler bleiben erhalten.</span>
+            </div>
 
-    <div class="form-grid">
-        <label class="form-field">
-            <span>Name des Spiels</span>
-            <input asp-for="Name" placeholder="z.B. Spieleabend bei Max" required maxlength="80" />
-        </label>
-
-        <label class="form-field">
-            <span>Spielmodul</span>
-            <select asp-for="ModuleKey" id="moduleSelect">
-                @foreach (var module in ModuleRegistry.Modules)
-                {
-                    <option value="@module.Key">@module.Icon @module.Name</option>
-                }
-            </select>
-        </label>
-    </div>
-
-    <fieldset class="form-section">
-        <legend>Spieler</legend>
-        @if (Model.SavedPlayerList.Count > 0)
-        {
-            <div class="chip-box">
-                <span class="form-hint">Gespeicherte Spieler antippen:</span>
-                <div class="chip-row" id="savedPlayerChips">
-                    @foreach (var saved in Model.SavedPlayerList)
-                    {
-                        <button type="button" class="chip" data-player="@saved.Name">
-                            <span class="color-dot" style="background:@saved.Color"></span> @saved.Name
-                        </button>
-                    }
+            <div class="mat-form__grid">
+                <div class="mat-field">
+                    <label class="mat-label" for="Name">Name des Spiels <span class="mat-req" aria-hidden="true">*</span></label>
+                    <input asp-for="Name" class="mat-input" placeholder="z.B. Spieleabend bei Max" required maxlength="80" data-msg-required="Bitte gib dem Spiel einen Namen." />
+                    <span class="mat-error" aria-live="polite"></span>
+                </div>
+                <div class="mat-field">
+                    <label class="mat-label" for="ModuleKey">Spielmodul</label>
+                    <select asp-for="ModuleKey" class="mat-select">
+                        @foreach (var module in ModuleRegistry.Modules)
+                        {
+                            <option value="@module.Key">@module.Name</option>
+                        }
+                    </select>
                 </div>
             </div>
-            <datalist id="savedPlayersList">
-                @foreach (var saved in Model.SavedPlayerList)
-                {
-                    <option value="@saved.Name"></option>
-                }
-            </datalist>
-        }
-        <div id="playerList" class="player-list">
-            @{ var players = Model.Players.Count > 0 ? Model.Players : new List<string> { "" }; }
-            @foreach (var player in players)
-            {
-                <div class="player-row">
-                    <input type="text" name="Players" value="@player" placeholder="Spielername" maxlength="40" list="savedPlayersList" />
-                    <button type="button" class="icon-btn remove-player" title="Entfernen">✖</button>
-                </div>
-            }
         </div>
-        <button type="button" class="btn btn-secondary btn-sm" id="addPlayer">＋ Spieler hinzufügen</button>
-        <label class="form-check">
-            <input asp-for="SavePlayers" type="checkbox" />
-            <span>Neue Spieler automatisch speichern (unter „Spieler" verwaltbar)</span>
-        </label>
-    </fieldset>
-
-    <fieldset class="form-section" id="qwixxConfig" data-module="qwixx">
-        <legend>Qwixx-Variante</legend>
-        <label class="form-field">
-            <span>Block</span>
-            <select asp-for="QwixxVariant">
-                @foreach (var (key, name) in QwixxPad.Variants)
-                {
-                    <option value="@key">@name</option>
-                }
-            </select>
-        </label>
-        <p class="form-hint">Gemixxt-Blöcke werden für jedes Spiel neu ausgewürfelt – nach den Regeln der Erweiterung „Qwixx gemixxt".</p>
-    </fieldset>
-
-    <fieldset class="form-section" id="munchkinConfig" data-module="munchkin">
-        <legend>Munchkin-Einstellungen</legend>
-        <label class="form-check">
-            <input asp-for="MunchkinTrackHealth" type="checkbox" />
-            <span>Lebenspunkte mitzählen (Munchkin Quest – Start mit 4 Leben)</span>
-        </label>
-    </fieldset>
-
-    <fieldset class="form-section" id="counterConfig" data-module="counter">
-        <legend>Zähler-Einstellungen</legend>
-        <div class="form-grid">
-            <label class="form-field">
-                <span>Startpunkte</span>
-                <input asp-for="StartScore" type="number" />
-            </label>
-            <label class="form-field">
-                <span>Schrittweite (+/−)</span>
-                <input asp-for="Step" type="number" min="1" />
-            </label>
-        </div>
-        <label class="form-check">
-            <input asp-for="HasTarget" type="checkbox" id="hasTarget" />
-            <span>Zielpunktzahl festlegen</span>
-        </label>
-        <label class="form-field indent" id="targetField">
-            <span>Zielpunktzahl</span>
-            <input asp-for="TargetScore" type="number" />
-        </label>
-        <label class="form-check">
-            <input asp-for="LowestWins" type="checkbox" />
-            <span>Wenigste Punkte gewinnen</span>
-        </label>
-        <label class="form-check">
-            <input asp-for="AllowNegative" type="checkbox" />
-            <span>Negative Punkte erlauben</span>
-        </label>
-        <label class="form-check">
-            <input asp-for="UseRounds" type="checkbox" />
-            <span>In Runden zählen</span>
-        </label>
-        <label class="form-check indent" id="subtractField">
-            <input asp-for="SubtractRounds" type="checkbox" />
-            <span>Rundenpunkte abziehen statt addieren (z.B. Darts)</span>
-        </label>
-    </fieldset>
-
-    <div class="action-bar">
-        <button type="submit" class="btn btn-primary">💾 Spiel starten</button>
-        <a class="btn btn-secondary" href="/games">‹ Zurück</a>
     </div>
+
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">Spieler</h2></div>
+        <div class="mat-card__body mat-stack">
+            @if (Model.SavedPlayerList.Count > 0)
+            {
+                <div class="mat-stack mat-stack--sm">
+                    <span class="mat-hint">Gespeicherte Spieler antippen:</span>
+                    <div class="mp-chip-row" id="savedPlayerChips">
+                        @foreach (var saved in Model.SavedPlayerList)
+                        {
+                            <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm mp-chip" data-player="@saved.Name">
+                                <span class="mat-dot" data-colour="@saved.Color" aria-hidden="true"></span><span>@saved.Name</span>
+                            </button>
+                        }
+                    </div>
+                </div>
+                <datalist id="savedPlayersList">
+                    @foreach (var saved in Model.SavedPlayerList)
+                    {
+                        <option value="@saved.Name"></option>
+                    }
+                </datalist>
+            }
+
+            <div id="playerList" class="mat-stack mat-stack--sm">
+                @foreach (var player in players)
+                {
+                    <div class="mp-player-row">
+                        <input type="text" class="mat-input" name="Players" value="@player" placeholder="Spielername" maxlength="40" list="savedPlayersList" aria-label="Spielername" />
+                        <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon remove-player" title="Entfernen" aria-label="Spieler entfernen">@Ui.Icon("x")</button>
+                    </div>
+                }
+            </div>
+            <div>
+                <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" id="addPlayer">@Ui.Icon("plus")<span>Spieler hinzufügen</span></button>
+            </div>
+
+            <label class="mat-check">
+                <input asp-for="SavePlayers" type="checkbox" />
+                <span class="mat-check__text">Neue Spieler automatisch speichern (unter „Spieler“ verwaltbar)</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="mat-card" data-show-if="ModuleKey" data-show-value="qwixx">
+        <div class="mat-card__head"><h2 class="mat-card__title">Qwixx-Variante</h2></div>
+        <div class="mat-card__body mat-stack">
+            <div class="mat-field">
+                <label class="mat-label" for="QwixxVariant">Block</label>
+                <select asp-for="QwixxVariant" class="mat-select">
+                    @foreach (var (key, name) in QwixxPad.Variants)
+                    {
+                        <option value="@key">@name</option>
+                    }
+                </select>
+                <span class="mat-hint">Gemixxt-Blöcke werden für jedes Spiel neu ausgewürfelt – nach den Regeln der Erweiterung „Qwixx gemixxt“.</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="mat-card" data-show-if="ModuleKey" data-show-value="munchkin">
+        <div class="mat-card__head"><h2 class="mat-card__title">Munchkin-Einstellungen</h2></div>
+        <div class="mat-card__body">
+            <label class="mat-check">
+                <input asp-for="MunchkinTrackHealth" type="checkbox" />
+                <span class="mat-check__text">Lebenspunkte mitzählen (Munchkin Quest – Start mit 4 Leben)</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="mat-card" data-show-if="ModuleKey" data-show-value="counter">
+        <div class="mat-card__head"><h2 class="mat-card__title">Zähler-Einstellungen</h2></div>
+        <div class="mat-card__body mat-stack">
+            <div class="mat-form__grid">
+                <div class="mat-field">
+                    <label class="mat-label" for="StartScore">Startpunkte</label>
+                    <input asp-for="StartScore" type="number" class="mat-input" inputmode="numeric" />
+                </div>
+                <div class="mat-field">
+                    <label class="mat-label" for="Step">Schrittweite (+/−)</label>
+                    <input asp-for="Step" type="number" class="mat-input" min="1" inputmode="numeric" />
+                </div>
+            </div>
+            <label class="mat-check">
+                <input asp-for="HasTarget" type="checkbox" />
+                <span class="mat-check__text">Zielpunktzahl festlegen</span>
+            </label>
+            <div class="mat-field" data-show-if="#HasTarget" data-show-value="true">
+                <label class="mat-label" for="TargetScore">Zielpunktzahl</label>
+                <input asp-for="TargetScore" type="number" class="mat-input" inputmode="numeric" />
+            </div>
+            <label class="mat-check">
+                <input asp-for="LowestWins" type="checkbox" />
+                <span class="mat-check__text">Wenigste Punkte gewinnen</span>
+            </label>
+            <label class="mat-check">
+                <input asp-for="AllowNegative" type="checkbox" />
+                <span class="mat-check__text">Negative Punkte erlauben</span>
+            </label>
+            <label class="mat-check">
+                <input asp-for="UseRounds" type="checkbox" />
+                <span class="mat-check__text">In Runden zählen</span>
+            </label>
+            <label class="mat-check" data-show-if="#UseRounds" data-show-value="true">
+                <input asp-for="SubtractRounds" type="checkbox" />
+                <span class="mat-check__text">Rundenpunkte abziehen statt addieren (z.B. Darts)</span>
+            </label>
+        </div>
+    </div>
+
+    <partial name="Controls/_FormActions" model="@(new FormActionsModel { SaveText = "Spiel starten", SaveIcon = "play", BackUrl = "/games/new" })" />
 </form>
 
 @section Scripts {
-    <script>
-        // Abhängige Felder nur zeigen, wenn benötigt
-        const moduleSelect = document.getElementById('moduleSelect');
-        const counterConfig = document.getElementById('counterConfig');
-        const qwixxConfig = document.getElementById('qwixxConfig');
-        const munchkinConfig = document.getElementById('munchkinConfig');
-        const hasTarget = document.getElementById('hasTarget');
-        const targetField = document.getElementById('targetField');
-
-        const useRounds = document.getElementById('UseRounds');
-        const subtractField = document.getElementById('subtractField');
-
-        function syncVisibility() {
-            counterConfig.style.display = moduleSelect.value === 'counter' ? '' : 'none';
-            qwixxConfig.style.display = moduleSelect.value === 'qwixx' ? '' : 'none';
-            munchkinConfig.style.display = moduleSelect.value === 'munchkin' ? '' : 'none';
-            targetField.style.display = hasTarget.checked ? '' : 'none';
-            subtractField.style.display = useRounds.checked ? '' : 'none';
-        }
-        useRounds.addEventListener('change', syncVisibility);
-        moduleSelect.addEventListener('change', () => {
-            document.getElementById('presetPicker').mpSet('');
-            syncVisibility();
-        });
-        hasTarget.addEventListener('change', syncVisibility);
-        syncVisibility();
-
-        // Preset-Auswahl: Modul + Konfiguration (und ggf. Name) übernehmen, Spieler bleiben erhalten
-        const PRESETS = @Html.Raw(Model.PresetsJson);
-        const presetSelect = document.getElementById('presetSelect');
-        presetSelect.addEventListener('change', () => {
-            const preset = PRESETS.find(p => p.key === presetSelect.value);
-            if (!preset) return;
-            moduleSelect.value = preset.moduleKey;
-            const nameInput = document.getElementById('Name');
-            if (!nameInput.value.trim() || PRESETS.some(p => p.name === nameInput.value)) {
-                nameInput.value = preset.name;
-            }
-            const c = preset.config || {};
-            if (preset.moduleKey === 'counter') {
-                document.getElementById('StartScore').value = c.startScore ?? 0;
-                document.getElementById('Step').value = c.step ?? 1;
-                hasTarget.checked = c.targetScore !== undefined && c.targetScore !== null;
-                document.getElementById('TargetScore').value = c.targetScore ?? 0;
-                document.getElementById('LowestWins').checked = !!c.lowestWins;
-                document.getElementById('AllowNegative').checked = c.allowNegative !== false;
-                document.getElementById('UseRounds').checked = !!c.useRounds;
-                document.getElementById('SubtractRounds').checked = !!c.subtractRounds;
-            } else if (preset.moduleKey === 'qwixx') {
-                document.getElementById('QwixxVariant').value = c.variant || 'classic';
-            } else if (preset.moduleKey === 'munchkin') {
-                document.getElementById('MunchkinTrackHealth').checked = !!c.trackHealth;
-            }
-            syncVisibility();
-        });
-
-        // Spielerliste
-        const playerList = document.getElementById('playerList');
-        function addPlayerRow(value) {
-            const row = document.createElement('div');
-            row.className = 'player-row';
-            row.innerHTML = '<input type="text" name="Players" placeholder="Spielername" maxlength="40" list="savedPlayersList" />' +
-                '<button type="button" class="icon-btn remove-player" title="Entfernen">✖</button>';
-            const input = row.querySelector('input');
-            input.value = value || '';
-            playerList.appendChild(row);
-            return input;
-        }
-        document.getElementById('addPlayer').addEventListener('click', () => addPlayerRow().focus());
-        playerList.addEventListener('click', e => {
-            if (e.target.closest('.remove-player')) e.target.closest('.player-row').remove();
-        });
-
-        // Vorauswahl-Chips: gespeicherten Spieler in freie Zeile eintragen
-        const chips = document.getElementById('savedPlayerChips');
-        if (chips) {
-            const names = () => [...playerList.querySelectorAll('input')].map(i => i.value.trim().toLowerCase());
-            const syncChips = () => chips.querySelectorAll('.chip').forEach(c =>
-                c.classList.toggle('used', names().includes(c.dataset.player.toLowerCase())));
-            chips.addEventListener('click', e => {
-                const chip = e.target.closest('.chip');
-                if (!chip || chip.classList.contains('used')) return;
-                const empty = [...playerList.querySelectorAll('input')].find(i => !i.value.trim());
-                if (empty) empty.value = chip.dataset.player;
-                else addPlayerRow(chip.dataset.player);
-                syncChips();
-            });
-            playerList.addEventListener('input', syncChips);
-            playerList.addEventListener('click', () => setTimeout(syncChips, 0));
-            syncChips();
-        }
-    </script>
+    <script src="~/js/games-create.js" asp-append-version="true"></script>
 }

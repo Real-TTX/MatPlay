@@ -37,58 +37,71 @@
     <input type="hidden" name="sort" value="@Model.Sort" />
     <input type="hidden" name="p" value="@Model.P" />
 
-    <div class="table-wrap">
-        <table class="table">
-            <thead>
-            <tr>
-                <th class="col-check"></th>
-                <th>Spiel</th>
-                <th class="col-hide-mobile">Modul</th>
-                <th>Status</th>
-                <th class="col-hide-mobile">Zuletzt aktiv</th>
-                <th class="col-actions"></th>
-            </tr>
-            </thead>
-            <tbody>
-            @if (Model.Items.Count == 0)
-            {
-                <tr><td colspan="6" class="table-empty">Noch keine Spiele – starte eins über die Start-Seite! 🚀</td></tr>
-            }
-            @foreach (var game in Model.Items)
-            {
-                var module = ModuleRegistry.GetModule(game.ModuleKey);
-                <tr>
-                    <td class="col-check"><input type="checkbox" name="selected" value="@game.Id" aria-label="@game.Name auswählen" /></td>
-                    <td><a class="table-link" href="/play/@game.ShareToken">@(module?.Icon ?? "🎮") @game.Name</a></td>
-                    <td class="col-hide-mobile">@(module?.Name ?? game.ModuleKey)</td>
-                    <td>
-                        <span class="badge @(game.Status == GameStatus.Running ? "badge-live" : "badge-done")">
-                            @(game.Status == GameStatus.Running ? "Läuft" : "Beendet")
-                        </span>
-                    </td>
-                    <td class="col-hide-mobile">@game.UpdateDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
-                    <td class="col-actions">
-                        <a class="icon-btn" href="/play/@game.ShareToken" title="Spielen">▶️</a>
-                        <a class="icon-btn" href="/games/edit/@game.Id" title="Bearbeiten">✏️</a>
-                    </td>
-                </tr>
-            }
-            </tbody>
-        </table>
-    </div>
-
-    <partial name="Controls/_Pagination" model="@(new PaginationModel
+    @if (Model.Items.Count == 0)
     {
-        Id = "gamesPagination",
-        Page = Model.P,
-        TotalPages = Model.TotalPages,
-        UrlFor = Model.UrlForPage,
-    })" />
-
-    <div class="action-bar">
-        <a class="btn btn-primary" href="/games/new">＋ Neues Spiel</a>
-        <span class="action-gap"></span>
-        <button type="submit" class="btn btn-danger"
-                onclick="return confirm('Ausgewählte Spiele wirklich löschen?')">🗑 Löschen</button>
-    </div>
+        <div class="mat-empty">
+            <div class="mat-empty__icon">@Ui.Icon("gamepad")</div>
+            <p class="mat-empty__title">Noch keine Spiele.</p>
+            <p class="mat-muted">Starte das erste über „Neues Spiel“.</p>
+        </div>
+    }
+    else
+    {
+        <div class="mat-stack" data-selectable>
+            <div class="mat-bulk" data-bulk-bar hidden role="status">
+                <span class="mat-bulk__count"><strong data-bulk-count>0</strong> ausgewählt</span>
+                <button type="submit" class="mat-btn mat-btn--danger mat-btn--sm" data-confirm="Ausgewählte Spiele wirklich löschen?" data-confirm-ok="Löschen">
+                    @Ui.Icon("trash")<span>Löschen</span>
+                </button>
+            </div>
+            <div class="mat-table-wrap">
+                <table class="mat-table">
+                    <caption class="mat-sr-only">Meine Spiele</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col" class="mat-table__select"><input type="checkbox" data-select-all aria-label="Alle Spiele auswählen" /></th>
+                        <th scope="col">Spiel</th>
+                        <th scope="col" class="mat-hide-sm">Modul</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="mat-hide-sm">Zuletzt aktiv</th>
+                        <th scope="col"><span class="mat-sr-only">Aktionen</span></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var game in Model.Items)
+                    {
+                        var module = ModuleRegistry.GetModule(game.ModuleKey);
+                        var running = game.Status == GameStatus.Running;
+                        <tr>
+                            <td data-label="Auswahl" class="mat-table__select"><input type="checkbox" name="selected" value="@game.Id" data-select-row aria-label="@game.Name auswählen" /></td>
+                            <td data-label="Spiel"><div class="mat-table__name"><span class="mp-inline-cover" aria-hidden="true">@ModuleRegistry.IconFor(game.ModuleKey, game.PresetKey)</span><a href="/play/@game.ShareToken">@game.Name</a></div></td>
+                            <td data-label="Modul" class="mat-hide-sm">@(module?.Name ?? game.ModuleKey)</td>
+                            <td data-label="Status"><span class="mat-pill @(running ? "mat-pill--ok" : "mat-pill--plain")">@(running ? "Läuft" : "Beendet")</span></td>
+                            <td data-label="Zuletzt aktiv" class="mat-hide-sm">@game.UpdateDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                            <td class="mat-table__cell-actions">
+                                <div class="mat-table__actions">
+                                    <a href="/play/@game.ShareToken" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" title="Spielen" aria-label="@game.Name spielen">@Ui.Icon("play")</a>
+                                    <a href="/games/edit/@game.Id" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" title="Bearbeiten" aria-label="@game.Name bearbeiten">@Ui.Icon("edit")</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
 </form>
+
+<partial name="Controls/_Pagination" model="@(new PaginationModel
+{
+    Id = "gamesPagination",
+    Page = Model.P,
+    TotalPages = Model.TotalPages,
+    TotalCount = Model.TotalCount,
+    UrlFor = Model.UrlForPage,
+})" />
+
+<div class="mat-actions">
+    <a class="mat-btn mat-btn--primary" href="/games/new">@Ui.Icon("plus")<span>Neues Spiel</span></a>
+</div>

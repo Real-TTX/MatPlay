@@ -1,8 +1,14 @@
 // MatPlay Service Worker – Shell-Caching für PWA
-const CACHE = 'matplay-v5';
+const CACHE = 'matplay-v6';
 const SHELL = [
-    '/css/site.css',
+    '/css/app.css',
+    '/matui/matui.css',
+    '/matui/matui.js',
+    '/matui/matui.boot.js',
+    '/matui/matui-icons.svg',
     '/js/site.js',
+    '/js/games-create.js',
+    '/js/games-edit.js',
     '/js/play-core.js',
     '/js/play-counter.js',
     '/js/play-qwixx.js',

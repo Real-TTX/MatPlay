@@ -1,22 +1,27 @@
 @page "/players/create"
 @model MatPlay.Pages.Players.CreateModel
+@using MatPlay.Pages.Shared.Controls
 @{
     ViewData["Title"] = "Neuer Spieler";
+    ViewData["Width"] = "narrow";
     ViewData["Breadcrumb"] = new List<(string, string?)> { ("Spieler", "/players"), ("Neu", null) };
 }
 
 @if (Model.Error != null)
 {
-    <div class="alert alert-error">@Model.Error</div>
+    <div class="mat-alert mat-alert--danger" role="alert">@Ui.Icon("alert")<span>@Model.Error</span></div>
 }
 
-<form method="post" class="form">
-    <label class="form-field">
-        <span>Name</span>
-        <input asp-for="Name" required maxlength="40" autofocus />
-    </label>
-    <div class="action-bar">
-        <button type="submit" class="btn btn-primary">💾 Speichern</button>
-        <a class="btn btn-secondary" href="/players">‹ Zurück</a>
+<div class="mat-card">
+    <div class="mat-card__body">
+        <form method="post" class="mat-form" novalidate>
+            <div class="mat-field">
+                <label class="mat-label" for="Name">Name <span class="mat-req" aria-hidden="true">*</span></label>
+                <input asp-for="Name" class="mat-input" required maxlength="40" autofocus data-msg-required="Bitte gib einen Namen ein." />
+                <span class="mat-error" aria-live="polite"></span>
+                <span class="mat-hint">Kürzel und Farbe werden automatisch vergeben und lassen sich danach ändern.</span>
+            </div>
+            <partial name="Controls/_FormActions" model="@(new FormActionsModel { BackUrl = "/players" })" />
+        </form>
     </div>
-</form>
+</div>

@@ -1,132 +1,84 @@
-@inject CurrentContext Current
-@inject AppInfo AppInfo
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
 @{
-    var title = ViewData["Title"] as string ?? "MatPlay";
-    var breadcrumb = ViewData["Breadcrumb"] as List<(string Text, string? Url)> ?? new();
-    var path = Context.Request.Path.Value ?? "/";
-    string NavClass(string prefix) =>
-        (prefix == "/" ? path == "/" : path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            ? "nav-item active" : "nav-item";
+    // Eine Seite kann setzen: Title (Überschrift + letzter Krümel), Description (eine Zeile unter dem Titel),
+    // Breadcrumb (Liste aus Text/Url, letzter Eintrag ohne Url), NoHeading (Seite zeichnet ihren Kopf selbst),
+    // Width ("narrow" | "wide") und Section TopActions (Icon-Buttons rechts in der Kopfleiste).
+    var title = ViewData["Title"] as string;
+    var description = ViewData["Description"] as string;
+    var breadcrumb = ViewData["Breadcrumb"] as List<(string Text, string? Url)>;
+    var showHeading = ViewData["NoHeading"] is not true && !string.IsNullOrEmpty(title);
+    var width = ViewData["Width"] as string;
 }
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-app="matplay" @Ui.ToolkitTexts>
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>@title – MatPlay</title>
-    <meta name="theme-color" content="#0b0e1a" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/icons/icon-180.png" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <script>
-        // Theme vor dem ersten Paint setzen (System / Dark / Bright)
-        (function () {
-            var t = localStorage.getItem('matplay-theme') || 'system';
-            var dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
-            document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-            document.documentElement.dataset.themeChoice = t;
-        })();
-    </script>
-    <link rel="stylesheet" href="/css/site.css" asp-append-version="true" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>@(string.IsNullOrEmpty(title) ? "MatPlay" : title + " · MatPlay")</title>
+    <script src="~/matui/matui.boot.js"></script>
+    <link rel="stylesheet" href="~/matui/matui.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+    <partial name="_PwaHead" />
 </head>
 <body>
-<div class="app">
-    <button class="menu-toggle" id="menuToggle" aria-label="Menü öffnen">
-        <span></span><span></span><span></span>
-    </button>
-    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <a class="mat-skip" href="#main">Zum Inhalt springen</a>
+    @Ui.Sprite(Env.WebRootPath)
 
-    <aside class="sidebar" id="sidebar">
-        <a class="brand" href="/">
-            <img src="/icons/favicon.svg" alt="" class="brand-logo" />
-            <span class="brand-name">Mat<em>Play</em></span>
-        </a>
+    <div class="mat-app">
+        <partial name="_Nav" />
 
-        <nav class="nav">
-            <a class="@NavClass("/")" href="/"><span class="nav-icon">🚀</span> Start</a>
-            <a class="@NavClass("/games")" href="/games"><span class="nav-icon">🎮</span> Meine Spiele</a>
-            <a class="@NavClass("/players")" href="/players"><span class="nav-icon">🧑‍🤝‍🧑</span> Spieler</a>
-            @if (Current.IsAdmin)
-            {
-                <div class="nav-section">Administration</div>
-                <a class="@NavClass("/admin/users")" href="/admin/users"><span class="nav-icon">👥</span> Benutzer</a>
-                <a class="@NavClass("/admin/settings")" href="/admin/settings"><span class="nav-icon">⚙️</span> Einstellungen</a>
-            }
-        </nav>
-
-        <div class="sidebar-footer">
-            @if (Current.IsAuthenticated)
-            {
-                <a class="account-box" href="/account/change-password" title="Passwort ändern">
-                    <span class="account-avatar">@Current.User!.DisplayName[..1].ToUpperInvariant()</span>
-                    <div class="account-info">
-                        <span class="account-name">@Current.User.DisplayName</span>
-                        <span class="account-role">@Current.User.Role</span>
-                    </div>
-                </a>
-            }
-            else
-            {
-                <div class="account-box">
-                    <span class="account-avatar">👤</span>
-                    <div class="account-info">
-                        <span class="account-name">Gast</span>
-                        <span class="account-role">Anonym</span>
-                    </div>
-                </div>
-            }
-            <div class="footer-actions">
-                <div class="theme-switch" role="group" aria-label="Theme">
-                    <button type="button" data-theme-choice="system" title="System">🖥️</button>
-                    <button type="button" data-theme-choice="light" title="Hell">☀️</button>
-                    <button type="button" data-theme-choice="dark" title="Dunkel">🌙</button>
-                </div>
-                @if (Current.IsAuthenticated)
-                {
-                    <form method="post" action="/account/logout" class="logout-form">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-ghost btn-sm" title="Abmelden">⎋ Logout</button>
-                    </form>
-                }
-                else
-                {
-                    <a href="/account/login" class="btn btn-ghost btn-sm">🔑 Login</a>
-                }
-            </div>
-            <div class="version">@AppInfo.Version</div>
-        </div>
-    </aside>
-
-    <main class="content">
-        <header class="content-header">
-            <h1>@title</h1>
-            @if (breadcrumb.Count > 0)
-            {
-                <nav class="breadcrumb" aria-label="Breadcrumb">
-                    <a href="/">Start</a>
-                    @foreach (var (text, url) in breadcrumb)
-                    {
-                        <span class="crumb-sep">/</span>
-                        @if (url != null)
+        <div class="mat-main">
+            <header class="mat-topbar">
+                <button type="button" class="mat-burger" data-nav-toggle aria-label="Menü umschalten" aria-controls="mat-nav" aria-expanded="false">@Ui.Icon("menu")</button>
+                <nav class="mat-crumbs" aria-label="Brotkrumen">
+                    <ol>
+                        <li><a href="/" aria-label="Start">@Ui.Icon("home")</a></li>
+                        @if (breadcrumb is { Count: > 0 })
                         {
-                            <a href="@url">@text</a>
+                            @foreach (var (text, url) in breadcrumb)
+                            {
+                                if (url != null)
+                                {
+                                    <li><a href="@url">@text</a></li>
+                                }
+                                else
+                                {
+                                    <li aria-current="page">@text</li>
+                                }
+                            }
                         }
                         else
                         {
-                            <span class="crumb-current">@text</span>
+                            <li aria-current="page">@(string.IsNullOrEmpty(title) ? "MatPlay" : title)</li>
                         }
-                    }
+                    </ol>
                 </nav>
-            }
-        </header>
-        <div class="content-body">
-            @RenderBody()
+                @if (IsSectionDefined("TopActions"))
+                {
+                    <div class="mat-topbar__actions">@await RenderSectionAsync("TopActions", required: false)</div>
+                }
+            </header>
+
+            <main class="mat-page @(width == "narrow" ? "mat-page--narrow" : width == "wide" ? "mat-page--wide" : "")" id="main">
+                @if (showHeading)
+                {
+                    <div class="mat-page__head">
+                        <div class="mat-page__title">
+                            <h1>@title</h1>
+                            @if (!string.IsNullOrEmpty(description))
+                            {
+                                <p class="mat-page__sub">@description</p>
+                            }
+                        </div>
+                    </div>
+                }
+                @RenderBody()
+            </main>
         </div>
-    </main>
-</div>
-<script src="/js/site.js" asp-append-version="true"></script>
-@await RenderSectionAsync("Scripts", required: false)
+    </div>
+
+    <script src="~/matui/matui.js" asp-append-version="true"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

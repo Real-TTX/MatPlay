@@ -5,37 +5,39 @@
     ViewData["Breadcrumb"] = new List<(string, string?)> { ("Meine Spiele", "/games"), (Model.Game.Name, null) };
 }
 
-<div class="play-toolbar">
-    <span class="badge badge-module accent-@Model.Module!.Accent">@Model.Module.Icon @Model.Module.Name</span>
-    <span class="badge" id="statusBadge"></span>
-    <span class="play-toolbar-spacer"></span>
-    <button type="button" class="btn btn-secondary btn-sm" id="shareBtn" title="Link teilen">🔗 Teilen</button>
-    <button type="button" class="btn btn-secondary btn-sm" id="wakeLockBtn" title="Bildschirm anlassen">📱 Display an</button>
+<div class="mp-play-bar">
+    <span class="mat-pill mat-pill--plain">@Model.Module!.Name</span>
+    <span class="mat-pill mat-pill--plain" id="statusBadge">…</span>
+    <span class="mp-play-bar__spacer"></span>
+    <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" id="shareBtn" title="Link teilen">@Ui.Icon("link")<span class="mp-lbl">Teilen</span></button>
+    <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" id="wakeLockBtn" title="Bildschirm anlassen">@Ui.Icon("smartphone")<span class="mp-lbl">Display an</span></button>
     @if (Model.HelpPreset != null)
     {
-        <button type="button" class="btn btn-secondary btn-sm" id="rulesBtn" title="Kurzregeln anzeigen">❓ Hilfe</button>
+        <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" id="rulesBtn" title="Kurzregeln anzeigen" aria-controls="rulesPanel" aria-expanded="false">@Ui.Icon("help-circle")<span class="mp-lbl">Hilfe</span></button>
     }
     @if (Model.IsOwner)
     {
-        <button type="button" class="btn btn-secondary btn-sm" id="finishBtn" title="Spiel beenden bzw. fortsetzen">🏁 Beenden</button>
-        <a class="btn btn-secondary btn-sm" href="/games/edit/@Model.Game.Id" title="Bearbeiten">✏️</a>
+        <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" id="finishBtn" title="Spiel beenden bzw. fortsetzen">@Ui.Icon("stop")<span class="mp-lbl">Beenden</span></button>
+        <a class="mat-btn mat-btn--secondary mat-btn--sm mat-btn--icon" href="/games/edit/@Model.Game.Id" title="Bearbeiten" aria-label="Spiel bearbeiten">@Ui.Icon("edit")</a>
     }
 </div>
 
 @if (Model.HelpPreset != null)
 {
-    <section class="rules-panel" id="rulesPanel" hidden>
-        <h3>@Model.HelpPreset.Icon Kurzregeln: @Model.HelpPreset.Name</h3>
-        <ul>
-            @foreach (var rule in Model.HelpPreset.Rules)
-            {
-                <li>@rule</li>
-            }
-        </ul>
+    <section class="mat-card mp-rules" id="rulesPanel" hidden aria-label="Kurzregeln">
+        <div class="mat-card__head"><h2 class="mat-card__title">Kurzregeln: @Model.HelpPreset.Name</h2></div>
+        <div class="mat-card__body">
+            <ul>
+                @foreach (var rule in Model.HelpPreset.Rules)
+                {
+                    <li>@rule</li>
+                }
+            </ul>
+        </div>
     </section>
 }
 
-<div class="pin-bar" id="pinBar" hidden></div>
+<div class="mp-pin" id="pinBar" hidden></div>
 
 <div id="playRoot"
      data-token="@Model.Game.ShareToken"
@@ -44,15 +46,6 @@
 </div>
 
 @section Scripts {
-    <script>
-        const rulesBtn = document.getElementById('rulesBtn');
-        if (rulesBtn) {
-            rulesBtn.addEventListener('click', () => {
-                const panel = document.getElementById('rulesPanel');
-                panel.hidden = !panel.hidden;
-            });
-        }
-    </script>
-    <script src="/js/play-core.js" asp-append-version="true"></script>
-    <script src="/js/play-@(Model.Game.ModuleKey).js" asp-append-version="true"></script>
+    <script src="~/js/play-core.js" asp-append-version="true"></script>
+    <script src="~/js/play-@(Model.Game.ModuleKey).js" asp-append-version="true"></script>
 }

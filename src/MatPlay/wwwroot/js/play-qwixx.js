@@ -4,6 +4,7 @@
     const tabs = document.getElementById('qwixxTabs');
     const pad = document.getElementById('qwixxPad');
     const scoresTable = document.getElementById('qwixxScores');
+    const { icon, escapeHtml } = MatPlayCore;
 
     let activePlayerId = null;
 
@@ -54,7 +55,7 @@
     }
 
     function render(state) {
-        if (!state.players.length) { pad.innerHTML = '<p class="form-hint">Noch keine Spieler.</p>'; return; }
+        if (!state.players.length) { pad.innerHTML = '<p class="mat-muted">Noch keine Spieler.</p>'; return; }
         if (!state.players.some(p => p.id === activePlayerId)) {
             const pinned = state.players.find(p => MatPlayCore.isPinned(p.id));
             activePlayerId = (pinned ?? state.players[0]).id;
@@ -64,9 +65,13 @@
         // Spieler-Tabs
         tabs.innerHTML = '';
         for (const player of state.players) {
+            const selected = player.id === activePlayerId;
             const tab = document.createElement('button');
             tab.type = 'button';
-            tab.className = 'tab' + (player.id === activePlayerId ? ' active' : '');
+            tab.className = 'mat-tab';
+            tab.setAttribute('role', 'tab');
+            tab.setAttribute('aria-selected', String(selected));
+            if (!selected) tab.tabIndex = -1;
             tab.textContent = `${player.name} · ${totalScore(rows, playerState(rows, player))}`;
             tab.addEventListener('click', () => { activePlayerId = player.id; render(state); });
             tabs.appendChild(tab);
@@ -81,7 +86,7 @@
         pad.innerHTML = '';
         for (const row of rows) {
             const rowEl = document.createElement('div');
-            rowEl.className = 'qwixx-row ' + (row.color || 'mixed');
+            rowEl.className = 'mp-qx-row ' + (row.color ? 'is-' + row.color : 'is-mixed');
             const checked = ps[row.key];
             const rowLocked = locked.includes(row.key);
             const numbers = row.cells.map(c => c.n);
@@ -90,10 +95,10 @@
             row.cells.forEach((cellDef, idx) => {
                 const cell = document.createElement('button');
                 cell.type = 'button';
-                cell.className = 'qwixx-cell c-' + cellDef.color;
+                cell.className = 'mp-qx-cell c-' + cellDef.color;
                 cell.textContent = cellDef.n;
                 const isChecked = checked.includes(cellDef.n);
-                if (isChecked) cell.classList.add('checked');
+                if (isChecked) cell.classList.add('is-checked');
 
                 const rightmostIdx = Math.max(-1, ...checked.map(n => numbers.indexOf(n)));
                 const isLast = idx === numbers.length - 1;
@@ -101,7 +106,11 @@
                     !rowLocked && (!isLast || checked.length >= 5);
                 const canUncheck = running && isChecked && idx === rightmostIdx;
 
-                if (!canCheck && !canUncheck) cell.classList.add('disabled');
+                if (!canCheck && !canUncheck) {
+                    cell.classList.add('is-disabled');
+                    cell.setAttribute('aria-disabled', 'true');
+                }
+                cell.setAttribute('aria-pressed', String(isChecked));
                 cell.addEventListener('click', () => {
                     if (canCheck) toggle(state, rows, player, row, cellDef.n, true);
                     else if (canUncheck) toggle(state, rows, player, row, cellDef.n, false);
@@ -110,9 +119,9 @@
             });
 
             const lockCell = document.createElement('span');
-            lockCell.className = 'qwixx-cell lock' + (rowLocked || checked.includes(last) ? ' checked' : '');
-            lockCell.textContent = '🔒';
-            lockCell.title = rowLocked ? 'Reihe geschlossen' : 'Schloss – letzte Zahl braucht 5 Kreuze';
+            lockCell.className = 'mp-qx-cell is-lock' + (rowLocked || checked.includes(last) ? ' is-checked' : '');
+            lockCell.innerHTML = icon('lock');
+            lockCell.title = rowLocked ? 'Reihe geschlossen' : 'Schloss – die letzte Zahl braucht 5 Kreuze';
             rowEl.appendChild(lockCell);
 
             pad.appendChild(rowEl);
@@ -120,16 +129,18 @@
 
         // Fehlwürfe
         const missRow = document.createElement('div');
-        missRow.className = 'qwixx-misses';
+        missRow.className = 'mp-qx-misses';
         const label = document.createElement('span');
-        label.className = 'label';
+        label.className = 'mat-muted';
         label.textContent = 'Fehlwürfe (−5):';
         missRow.appendChild(label);
         for (let i = 1; i <= 4; i++) {
             const box = document.createElement('button');
             box.type = 'button';
-            box.className = 'qwixx-cell' + (ps.misses >= i ? ' checked miss' : '');
-            box.textContent = ps.misses >= i ? '✖' : '';
+            box.className = 'mp-qx-cell' + (ps.misses >= i ? ' is-checked' : '');
+            box.innerHTML = ps.misses >= i ? icon('x') : '';
+            box.setAttribute('aria-label', `Fehlwurf ${i}`);
+            box.setAttribute('aria-pressed', String(ps.misses >= i));
             box.addEventListener('click', () => {
                 if (!running) return;
                 const next = { ...ps, misses: ps.misses >= i ? i - 1 : i };
@@ -140,7 +151,7 @@
         pad.appendChild(missRow);
 
         const total = document.createElement('div');
-        total.className = 'qwixx-total';
+        total.className = 'mp-qx-total';
         total.textContent = `Punkte: ${totalScore(rows, ps)}`;
         pad.appendChild(total);
 
@@ -170,17 +181,11 @@
         const list = state.players
             .map(p => ({ name: p.name, score: totalScore(rows, playerState(rows, p)) }))
             .sort((a, b) => b.score - a.score);
-        let html = '<thead><tr><th>#</th><th>Spieler</th><th>Punkte</th></tr></thead><tbody>';
+        let html = '<thead><tr><th scope="col">#</th><th scope="col">Spieler</th><th scope="col" class="mat-num">Punkte</th></tr></thead><tbody>';
         list.forEach((r, i) => {
-            html += `<tr><td>${i === 0 ? '🏆' : i + 1}</td><td>${escapeHtml(r.name)}</td><td>${r.score}</td></tr>`;
+            html += `<tr><td data-label="Platz">${i + 1}</td><td data-label="Spieler">${escapeHtml(r.name)}</td><td data-label="Punkte" class="mat-num">${r.score}</td></tr>`;
         });
         scoresTable.innerHTML = html + '</tbody>';
-    }
-
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
 
     MatPlayCore.init(render);

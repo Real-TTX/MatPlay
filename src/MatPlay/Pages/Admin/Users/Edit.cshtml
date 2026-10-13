@@ -1,42 +1,49 @@
 @page "/admin/users/edit/{id:long}"
 @model MatPlay.Pages.Admin.Users.EditModel
+@using MatPlay.Pages.Shared.Controls
 @{
     ViewData["Title"] = "Benutzer bearbeiten";
+    ViewData["Width"] = "narrow";
     ViewData["Breadcrumb"] = new List<(string, string?)> { ("Administration", null), ("Benutzer", "/admin/users"), (Model.Target?.Username ?? "Bearbeiten", null) };
 }
 
 @if (Model.Error != null)
 {
-    <div class="alert alert-error">@Model.Error</div>
+    <div class="mat-alert mat-alert--danger" role="alert">@Ui.Icon("alert")<span>@Model.Error</span></div>
 }
 
-<form method="post" class="form">
-    <div class="form-grid">
-        <label class="form-field">
-            <span>Benutzername</span>
-            <input value="@Model.Target?.Username" disabled />
-        </label>
-        <label class="form-field">
-            <span>Anzeigename</span>
-            <input asp-for="DisplayName" maxlength="60" />
-        </label>
-        <label class="form-field">
-            <span>Rolle</span>
-            <select asp-for="Role">
-                <option value="@Roles.User">User</option>
-                <option value="@Roles.Admin">Admin</option>
-            </select>
-        </label>
-        <label class="form-field">
-            <span>Neues Passwort (leer = unverändert)</span>
-            <input asp-for="NewPassword" type="password" autocomplete="new-password" />
-        </label>
+<div class="mat-card">
+    <div class="mat-card__body">
+        <form method="post" class="mat-form" novalidate>
+            <div class="mat-form__grid">
+                <div class="mat-field">
+                    <label class="mat-label" for="username-ro">Benutzername</label>
+                    <input class="mat-input" id="username-ro" value="@Model.Target?.Username" disabled />
+                </div>
+                <div class="mat-field">
+                    <label class="mat-label" for="DisplayName">Anzeigename</label>
+                    <input asp-for="DisplayName" class="mat-input" maxlength="60" autocomplete="off" />
+                </div>
+                <div class="mat-field">
+                    <label class="mat-label" for="Role">Rolle</label>
+                    <select asp-for="Role" class="mat-select">
+                        <option value="@Roles.User">User</option>
+                        <option value="@Roles.Admin">Admin</option>
+                    </select>
+                </div>
+                <div class="mat-field">
+                    <label class="mat-label" for="NewPassword">Neues Passwort</label>
+                    <input asp-for="NewPassword" type="password" class="mat-input" autocomplete="new-password" />
+                    <span class="mat-hint">Leer lassen, um das Passwort nicht zu ändern.</span>
+                </div>
+            </div>
+            <partial name="Controls/_FormActions" model="@(new FormActionsModel
+            {
+                BackUrl = "/admin/users",
+                DeleteHandler = "Delete",
+                DeleteConfirm = "Diesen Benutzer wirklich löschen?",
+            })" />
+        </form>
+        <partial name="Controls/_DeleteForm" model="@(new FormActionsModel { DeleteHandler = "Delete" })" />
     </div>
-    <div class="action-bar">
-        <button type="submit" class="btn btn-primary">💾 Speichern</button>
-        <a class="btn btn-secondary" href="/admin/users">‹ Zurück</a>
-        <span class="action-gap"></span>
-        <button type="submit" asp-page-handler="delete" class="btn btn-danger"
-                onclick="return confirm('Diesen Benutzer wirklich löschen?')">🗑 Löschen</button>
-    </div>
-</form>
+</div>

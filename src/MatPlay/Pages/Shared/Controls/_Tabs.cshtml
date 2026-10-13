@@ -1,7 +1,7 @@
 @model MatPlay.Pages.Shared.Controls.TabsModel
-<nav class="tab-bar" id="@Model.Id">
+<nav class="mat-tabs" id="@Model.Id" aria-label="Abschnitte">
     @foreach (var (key, label, url) in Model.Items)
     {
-        <a class="tab @(key == Model.Active ? "active" : "")" href="@url">@label</a>
+        <a class="mat-tab @(key == Model.Active ? "is-active" : "")" href="@url" aria-current="@(key == Model.Active ? "page" : null)">@label</a>
     }
 </nav>

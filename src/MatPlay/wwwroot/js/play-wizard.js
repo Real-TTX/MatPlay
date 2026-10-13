@@ -5,6 +5,7 @@
     const board = document.getElementById('wizardBoard');
     const history = document.getElementById('wizardHistory');
     const table = document.getElementById('wizardTable');
+    const { icon, escapeHtml } = MatPlayCore;
 
     function playerRounds(player) {
         return (player.state && player.state.rounds) || [];
@@ -25,14 +26,14 @@
     }
 
     function render(state) {
-        if (!state.players.length) { board.innerHTML = '<p class="form-hint">Noch keine Spieler.</p>'; return; }
+        if (!state.players.length) { board.innerHTML = '<p class="mat-muted">Noch keine Spieler.</p>'; return; }
         const running = state.status === 0;
         const max = maxRounds(state);
         const minRound = Math.min(...state.players.map(p => playerRounds(p).length));
         const finished = minRound >= max;
 
         info.textContent = finished
-            ? `🏁 Alle ${max} Runden gespielt!`
+            ? `Alle ${max} Runden gespielt`
             : `Runde ${minRound + 1} von ${max} · ${minRound + 1} Karte${minRound + 1 > 1 ? 'n' : ''} pro Spieler`;
 
         const totals = new Map(state.players.map(p => [p.id, totalScore(p)]));
@@ -49,44 +50,30 @@
             const leader = !finished && state.players.length > 1 && total === best && rounds.length > 0;
 
             const card = document.createElement('div');
-            card.className = 'counter-card' + (winner ? ' winner' : leader ? ' leader' : '')
-                + (canEdit ? '' : ' readonly');
+            card.className = 'mp-player' + (winner ? ' is-winner' : leader ? ' is-leader' : '')
+                + (canEdit ? '' : ' is-readonly');
 
-            const name = document.createElement('div');
-            name.className = 'counter-name';
-            name.textContent = player.name;
-            card.appendChild(name);
-
-            const tag = document.createElement('div');
-            tag.className = 'counter-winner-tag';
-            tag.textContent = winner ? '🏆 GEWONNEN!' : leader ? '⭐ Führt' : '';
-            card.appendChild(tag);
-
-            const totalEl = document.createElement('div');
-            totalEl.className = 'counter-total';
-            totalEl.textContent = total;
-            card.appendChild(totalEl);
+            card.appendChild(textEl('div', 'mp-player__name', player.name));
+            card.appendChild(textEl('div', 'mp-player__tag', winner ? 'Gewonnen!' : leader ? 'Führt' : ''));
+            card.appendChild(textEl('div', 'mp-total', String(total)));
 
             if (running && canEdit && rounds.length < max) {
-                const roundTag = document.createElement('div');
-                roundTag.className = 'counter-round-tag';
-                roundTag.textContent = `Runde ${rounds.length + 1}`;
-                card.appendChild(roundTag);
+                card.appendChild(textEl('div', 'mp-round-tag', `Runde ${rounds.length + 1}`));
 
                 const form = document.createElement('div');
-                form.className = 'wizard-form';
-                const bid = numberInput('Ansage', rounds.length + 1);
-                const tricks = numberInput('Stiche', rounds.length + 1);
+                form.className = 'mp-entry';
+                const bid = numberInput('Ansage', rounds.length + 1, `Ansage von ${player.name}`);
+                const tricks = numberInput('Stiche', rounds.length + 1, `Stiche von ${player.name}`);
                 const btn = document.createElement('button');
-                btn.className = 'btn btn-primary btn-sm';
-                btn.textContent = '✔';
-                btn.title = 'Runde eintragen';
+                btn.type = 'button';
+                btn.className = 'mat-btn mat-btn--primary mat-btn--icon';
+                btn.innerHTML = icon('check');
+                btn.setAttribute('aria-label', 'Runde eintragen');
                 const submit = () => {
                     const b = parseInt(bid.value, 10);
                     const t = parseInt(tricks.value, 10);
                     if (Number.isNaN(b) || Number.isNaN(t) || b < 0 || t < 0) return;
-                    const next = { rounds: [...rounds, { bid: b, tricks: t }] };
-                    MatPlayCore.action('/player-state', { playerId: player.id, state: next });
+                    MatPlayCore.action('/player-state', { playerId: player.id, state: { rounds: [...rounds, { bid: b, tricks: t }] } });
                 };
                 btn.addEventListener('click', submit);
                 tricks.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
@@ -94,33 +81,41 @@
                 card.appendChild(form);
             }
 
-            if (running && canEdit && rounds.length > 0) {
-                const undo = document.createElement('button');
-                undo.className = 'btn btn-ghost btn-sm';
-                undo.textContent = '↩️ Letzte Runde';
-                undo.title = 'Letzte Runde dieses Spielers zurücknehmen';
-                undo.addEventListener('click', () => {
-                    MatPlayCore.action('/player-state', {
-                        playerId: player.id,
-                        state: { rounds: rounds.slice(0, -1) },
-                    });
-                });
-                card.appendChild(undo);
-            }
+            if (running && canEdit && rounds.length > 0) card.appendChild(undoButton(player, rounds));
             board.appendChild(card);
         }
 
         renderHistory(state, max);
     }
 
-    function numberInput(placeholder, maxValue) {
+    function undoButton(player, rounds) {
+        const undo = document.createElement('button');
+        undo.type = 'button';
+        undo.className = 'mat-btn mat-btn--ghost mat-btn--sm';
+        undo.innerHTML = icon('restore') + '<span>Letzte Runde</span>';
+        undo.title = 'Letzte Runde dieses Spielers zurücknehmen';
+        undo.addEventListener('click', () => {
+            MatPlayCore.action('/player-state', { playerId: player.id, state: { rounds: rounds.slice(0, -1) } });
+        });
+        return undo;
+    }
+
+    function textEl(tag, className, text) {
+        const node = document.createElement(tag);
+        node.className = className;
+        node.textContent = text;
+        return node;
+    }
+
+    function numberInput(placeholder, maxValue, label) {
         const input = document.createElement('input');
         input.type = 'number';
+        input.className = 'mat-input mat-input--narrow';
         input.inputMode = 'numeric';
         input.min = 0;
         input.max = maxValue;
         input.placeholder = placeholder;
-        input.setAttribute('aria-label', placeholder);
+        input.setAttribute('aria-label', label);
         return input;
     }
 
@@ -129,27 +124,21 @@
         if (played === 0) { history.hidden = true; return; }
         history.hidden = false;
 
-        let html = '<thead><tr><th>Runde</th>' +
-            state.players.map(p => `<th>${escapeHtml(p.name)}</th>`).join('') + '</tr></thead><tbody>';
+        let html = '<thead><tr><th scope="col">Runde</th>' +
+            state.players.map(p => `<th scope="col" class="mat-num">${escapeHtml(p.name)}</th>`).join('') + '</tr></thead><tbody>';
         for (let r = 0; r < Math.min(played, max); r++) {
-            html += `<tr><td>${r + 1}</td>`;
+            html += `<tr><td data-label="Runde">${r + 1}</td>`;
             for (const p of state.players) {
                 const entry = playerRounds(p)[r];
-                if (!entry) { html += '<td>–</td>'; continue; }
+                if (!entry) { html += `<td data-label="${escapeHtml(p.name)}" class="mat-num">–</td>`; continue; }
                 const score = roundScore(entry);
                 const hit = entry.bid === entry.tricks;
-                html += `<td><span class="${hit ? 'log-value pos' : 'log-value neg'}">${score > 0 ? '+' : ''}${score}</span>` +
-                    ` <span class="log-round">${entry.tricks}/${entry.bid}</span></td>`;
+                html += `<td data-label="${escapeHtml(p.name)}" class="mat-num"><span class="${hit ? 'mp-pos' : 'mp-neg'}">${score > 0 ? '+' : ''}${score}</span>` +
+                    ` <span class="mp-dim">${entry.tricks}/${entry.bid}</span></td>`;
             }
             html += '</tr>';
         }
         table.innerHTML = html + '</tbody>';
-    }
-
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
 
     MatPlayCore.init(render);

@@ -1,127 +1,119 @@
 @page "/games/edit/{id:long}"
 @model MatPlay.Pages.Games.EditModel
+@using MatPlay.Pages.Shared.Controls
 @{
     ViewData["Title"] = "Spiel bearbeiten";
+    ViewData["Width"] = "narrow";
     ViewData["Breadcrumb"] = new List<(string, string?)> { ("Meine Spiele", "/games"), (Model.Game?.Name ?? "Bearbeiten", null) };
     var shareUrl = $"{Request.Scheme}://{Request.Host}/play/{Model.Game?.ShareToken}";
 }
 
 @if (Model.Error != null)
 {
-    <div class="alert alert-error">@Model.Error</div>
+    <div class="mat-alert mat-alert--danger" role="alert">@Ui.Icon("alert")<span>@Model.Error</span></div>
 }
 
-<div class="share-box">
-    <span class="share-label">🔗 Freigabe-Link (alle mit Link können mitspielen):</span>
-    <div class="share-row">
-        <input type="text" readonly value="@shareUrl" id="shareUrl" onclick="this.select()" />
-        <button type="button" class="btn btn-secondary btn-sm" data-copy="#shareUrl">📋 Kopieren</button>
+<div class="mat-card">
+    <div class="mat-card__body mat-stack mat-stack--sm">
+        <label class="mat-label" for="shareUrl">Freigabe-Link</label>
+        <div class="mat-input-group">
+            <input class="mat-input mat-mono" id="shareUrl" value="@shareUrl" readonly />
+            <button type="button" class="mat-btn mat-btn--secondary" data-copy="#shareUrl">@Ui.Icon("copy")<span>Kopieren</span></button>
+        </div>
+        <span class="mat-hint">Alle mit diesem Link können mitspielen.</span>
     </div>
 </div>
 
-<form method="post" class="form">
-    <div class="form-grid">
-        <label class="form-field">
-            <span>Name des Spiels</span>
-            <input asp-for="Name" required maxlength="80" />
-        </label>
-        <label class="form-field">
-            <span>Status</span>
-            <select asp-for="Status">
-                <option value="0">Läuft</option>
-                <option value="1">Beendet</option>
-            </select>
-        </label>
+<form method="post" class="mat-form" novalidate>
+    <div class="mat-card">
+        <div class="mat-card__body mat-form__grid">
+            <div class="mat-field">
+                <label class="mat-label" for="Name">Name des Spiels <span class="mat-req" aria-hidden="true">*</span></label>
+                <input asp-for="Name" class="mat-input" required maxlength="80" data-msg-required="Der Name darf nicht leer sein." />
+                <span class="mat-error" aria-live="polite"></span>
+            </div>
+            <div class="mat-field">
+                <label class="mat-label" for="Status">Status</label>
+                <select asp-for="Status" class="mat-select">
+                    <option value="0">Läuft</option>
+                    <option value="1">Beendet</option>
+                </select>
+            </div>
+        </div>
     </div>
 
-    <fieldset class="form-section">
-        <legend>Spieler</legend>
-        <p class="form-hint">Name leeren, um einen Spieler zu entfernen.</p>
-        <div class="player-list" id="editPlayerList">
-            @for (var i = 0; i < Model.Players.Count; i++)
-            {
-                <div class="player-row">
-                    <input type="hidden" name="PlayerIds" value="@Model.Players[i].Id" />
-                    <input type="text" name="PlayerNames" value="@Model.Players[i].Name" maxlength="40" />
-                </div>
-            }
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">Spieler</h2></div>
+        <div class="mat-card__body mat-stack">
+            <div class="mat-stack mat-stack--sm" id="editPlayerList">
+                @for (var i = 0; i < Model.Players.Count; i++)
+                {
+                    <div class="mp-player-row">
+                        <input type="hidden" name="PlayerIds" value="@Model.Players[i].Id" />
+                        <input type="text" class="mat-input" name="PlayerNames" value="@Model.Players[i].Name" maxlength="40" aria-label="Name von Spieler @(i + 1)" />
+                    </div>
+                }
+            </div>
+            <span class="mat-hint">Name leeren, um einen Spieler zu entfernen.</span>
+            <div>
+                <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" id="addPlayerRow">@Ui.Icon("plus")<span>Spieler hinzufügen</span></button>
+            </div>
         </div>
-        <button type="button" class="btn btn-secondary btn-sm" id="addPlayerRow">＋ Spieler hinzufügen</button>
-    </fieldset>
+    </div>
 
     @if (Model.Game?.ModuleKey == "counter")
     {
-        <fieldset class="form-section">
-            <legend>Zähler-Einstellungen</legend>
-            <div class="form-grid">
-                <label class="form-field">
-                    <span>Startpunkte</span>
-                    <input asp-for="StartScore" type="number" />
+        <div class="mat-card">
+            <div class="mat-card__head"><h2 class="mat-card__title">Zähler-Einstellungen</h2></div>
+            <div class="mat-card__body mat-stack">
+                <div class="mat-form__grid">
+                    <div class="mat-field">
+                        <label class="mat-label" for="StartScore">Startpunkte</label>
+                        <input asp-for="StartScore" type="number" class="mat-input" inputmode="numeric" />
+                    </div>
+                    <div class="mat-field">
+                        <label class="mat-label" for="Step">Schrittweite (+/−)</label>
+                        <input asp-for="Step" type="number" class="mat-input" min="1" inputmode="numeric" />
+                    </div>
+                </div>
+                <label class="mat-check">
+                    <input asp-for="HasTarget" type="checkbox" />
+                    <span class="mat-check__text">Zielpunktzahl festlegen</span>
                 </label>
-                <label class="form-field">
-                    <span>Schrittweite (+/−)</span>
-                    <input asp-for="Step" type="number" min="1" />
+                <div class="mat-field" data-show-if="#HasTarget" data-show-value="true">
+                    <label class="mat-label" for="TargetScore">Zielpunktzahl</label>
+                    <input asp-for="TargetScore" type="number" class="mat-input" inputmode="numeric" />
+                </div>
+                <label class="mat-check">
+                    <input asp-for="LowestWins" type="checkbox" />
+                    <span class="mat-check__text">Wenigste Punkte gewinnen</span>
+                </label>
+                <label class="mat-check">
+                    <input asp-for="AllowNegative" type="checkbox" />
+                    <span class="mat-check__text">Negative Punkte erlauben</span>
+                </label>
+                <label class="mat-check">
+                    <input asp-for="UseRounds" type="checkbox" />
+                    <span class="mat-check__text">In Runden zählen</span>
+                </label>
+                <label class="mat-check" data-show-if="#UseRounds" data-show-value="true">
+                    <input asp-for="SubtractRounds" type="checkbox" />
+                    <span class="mat-check__text">Rundenpunkte abziehen statt addieren (z.B. Darts)</span>
                 </label>
             </div>
-            <label class="form-check">
-                <input asp-for="HasTarget" type="checkbox" id="hasTarget" />
-                <span>Zielpunktzahl festlegen</span>
-            </label>
-            <label class="form-field indent" id="targetField">
-                <span>Zielpunktzahl</span>
-                <input asp-for="TargetScore" type="number" />
-            </label>
-            <label class="form-check">
-                <input asp-for="LowestWins" type="checkbox" />
-                <span>Wenigste Punkte gewinnen</span>
-            </label>
-            <label class="form-check">
-                <input asp-for="AllowNegative" type="checkbox" />
-                <span>Negative Punkte erlauben</span>
-            </label>
-            <label class="form-check">
-                <input asp-for="UseRounds" type="checkbox" />
-                <span>In Runden zählen</span>
-            </label>
-            <label class="form-check indent" id="subtractField">
-                <input asp-for="SubtractRounds" type="checkbox" />
-                <span>Rundenpunkte abziehen statt addieren (z.B. Darts)</span>
-            </label>
-        </fieldset>
+        </div>
     }
 
-    <div class="action-bar">
-        <button type="submit" class="btn btn-primary">💾 Speichern</button>
-        <a class="btn btn-secondary" href="/games">‹ Zurück</a>
-        <span class="action-gap"></span>
-        <button type="submit" asp-page-handler="delete" class="btn btn-danger"
-                onclick="return confirm('Dieses Spiel wirklich löschen?')">🗑 Löschen</button>
-    </div>
+    <partial name="Controls/_FormActions" model="@(new FormActionsModel
+    {
+        BackUrl = "/games",
+        DeleteHandler = "Delete",
+        DeleteConfirm = "Dieses Spiel wirklich löschen?",
+    })" />
 </form>
 
-@section Scripts {
-    <script>
-        const hasTarget = document.getElementById('hasTarget');
-        const targetField = document.getElementById('targetField');
-        if (hasTarget && targetField) {
-            const useRounds = document.getElementById('UseRounds');
-            const subtractField = document.getElementById('subtractField');
-            const sync = () => {
-                targetField.style.display = hasTarget.checked ? '' : 'none';
-                subtractField.style.display = useRounds.checked ? '' : 'none';
-            };
-            hasTarget.addEventListener('change', sync);
-            useRounds.addEventListener('change', sync);
-            sync();
-        }
+<partial name="Controls/_DeleteForm" model="@(new FormActionsModel { DeleteHandler = "Delete" })" />
 
-        document.getElementById('addPlayerRow').addEventListener('click', () => {
-            const row = document.createElement('div');
-            row.className = 'player-row';
-            row.innerHTML = '<input type="hidden" name="PlayerIds" value="0" />' +
-                '<input type="text" name="PlayerNames" placeholder="Neuer Spieler" maxlength="40" />';
-            document.getElementById('editPlayerList').appendChild(row);
-            row.querySelector('input[type=text]').focus();
-        });
-    </script>
+@section Scripts {
+    <script src="~/js/games-edit.js" asp-append-version="true"></script>
 }

@@ -3,13 +3,9 @@
 @using MatPlay.Pages.Shared.Controls
 @{
     ViewData["Title"] = "Neues Spiel";
+    ViewData["Description"] = "Wähle eine Spielart – ohne Anmeldung direkt loslegen. Link teilen und alle zählen mit.";
     ViewData["Breadcrumb"] = new List<(string, string?)> { ("Meine Spiele", "/games"), ("Neues Spiel", null) };
 }
-
-<section class="hero">
-    <h2 class="hero-title">Spiel starten. <span class="neon">Punkte zählen.</span> Gewinnen.</h2>
-    <p class="hero-sub">Wähle eine Spielart – ohne Anmeldung, direkt loslegen. Link teilen und alle zählen mit.</p>
-</section>
 
 <partial name="Controls/_ListToolbar" model="@(new ListToolbarModel
 {
@@ -21,52 +17,61 @@
         ? [new ToolbarFilter
         {
             Name = "fav", Label = "Anzeigen", Selected = Model.Fav,
-            Options = [("", "Alle Spielarten"), ("1", "⭐ Nur Favoriten")],
+            Options = [("", "Alle Spielarten"), ("1", "Nur Favoriten")],
         }]
         : [],
 })" />
 
 @if (Model.Presets.Count == 0)
 {
-    <p class="table-empty">Keine Spielart gefunden – probier einen anderen Suchbegriff. 🔍</p>
+    <div class="mat-empty">
+        <div class="mat-empty__icon">@Ui.Icon("search")</div>
+        <p class="mat-empty__title">Keine Spielart gefunden.</p>
+        <p class="mat-muted">Probier einen anderen Suchbegriff.</p>
+    </div>
 }
-
-<section class="preset-grid">
-    @foreach (var preset in Model.Presets)
-    {
-        var isFavorite = Model.FavoriteKeys.Contains(preset.Key);
-        <div class="preset-card accent-@preset.Accent">
-            @if (Model.CanFavorite)
-            {
-                <form method="post" asp-page-handler="toggleFavorite" class="fav-form">
-                    <input type="hidden" name="presetKey" value="@preset.Key" />
-                    <input type="hidden" name="q" value="@Model.Q" />
-                    <input type="hidden" name="fav" value="@Model.Fav" />
-                    <input type="hidden" name="p" value="@Model.P" />
-                    <button type="submit" class="fav-btn @(isFavorite ? "active" : "")"
-                            title="@(isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen")">
-                        @(isFavorite ? "★" : "☆")
-                    </button>
-                </form>
-            }
-            <a class="preset-link" href="/games/create?preset=@preset.Key">
-                <span class="preset-icon">@preset.Icon</span>
-                <span class="preset-name">@preset.Name</span>
-                <span class="preset-desc">@preset.Description</span>
-                <span class="preset-cta">Starten ›</span>
-            </a>
-        </div>
-    }
-</section>
+else
+{
+    <div class="mat-grid">
+        @foreach (var preset in Model.Presets)
+        {
+            var isFavorite = Model.FavoriteKeys.Contains(preset.Key);
+            <div class="mat-card mp-preset mp-preset--wrap">
+                <a class="mp-preset__link" href="/games/create?preset=@preset.Key">
+                    <span class="mp-cover mp-cover--lg" aria-hidden="true">@preset.Icon</span>
+                    <strong>@preset.Name</strong>
+                    <span class="mat-muted mp-preset__desc">@preset.Description</span>
+                    <span class="mp-cta">Starten @Ui.Icon("arrow-right")</span>
+                </a>
+                @if (Model.CanFavorite)
+                {
+                    <form method="post" asp-page-handler="toggleFavorite" class="mp-fav-form">
+                        <input type="hidden" name="presetKey" value="@preset.Key" />
+                        <input type="hidden" name="q" value="@Model.Q" />
+                        <input type="hidden" name="fav" value="@Model.Fav" />
+                        <input type="hidden" name="p" value="@Model.P" />
+                        <button type="submit" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm mp-fav @(isFavorite ? "is-on" : "")"
+                                aria-pressed="@(isFavorite ? "true" : "false")"
+                                aria-label="@(isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen")"
+                                title="@(isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen")">
+                            @Ui.Icon("star")
+                        </button>
+                    </form>
+                }
+            </div>
+        }
+    </div>
+}
 
 <partial name="Controls/_Pagination" model="@(new PaginationModel
 {
     Id = "catalogPagination",
     Page = Model.P,
     TotalPages = Model.TotalPages,
+    TotalCount = Model.TotalCount,
     UrlFor = Model.UrlForPage,
 })" />
 
-<div class="action-bar">
-    <a class="btn btn-secondary" href="/games/create">🛠 Eigenes Spiel ohne Preset</a>
+<div class="mat-actions">
+    <a class="mat-btn mat-btn--secondary" href="/games/create">@Ui.Icon("sliders")<span>Eigenes Spiel ohne Preset</span></a>
 </div>

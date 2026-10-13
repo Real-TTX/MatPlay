@@ -1,0 +1,14 @@
+@model MatPlay.Pages.Shared.Controls.FormActionsModel
+@*
+    Gegenstück zu _FormActions: das versteckte POST-Formular, das der Löschen-Button
+    (form="deleteForm_<Handler>") abschickt. AUSSERHALB des Hauptformulars rendern.
+*@
+@if (!string.IsNullOrEmpty(Model.DeleteHandler))
+{
+    <form method="post" asp-page-handler="@Model.DeleteHandler" id="@($"deleteForm_{Model.DeleteHandler}")" hidden>
+        @foreach (var (key, value) in Model.DeleteRouteValues)
+        {
+            <input type="hidden" name="@key" value="@value" />
+        }
+    </form>
+}

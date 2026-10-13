@@ -18,6 +18,7 @@ public class NewModel(AppDbContext db, CurrentContext current) : PageModel
     public List<GamePreset> Presets { get; private set; } = [];
     public HashSet<string> FavoriteKeys { get; private set; } = [];
     public int TotalPages { get; private set; } = 1;
+    public int TotalCount { get; private set; }
     public bool CanFavorite => current.IsAuthenticated;
 
     public async Task OnGetAsync()
@@ -37,6 +38,7 @@ public class NewModel(AppDbContext db, CurrentContext current) : PageModel
             .OrderByDescending(p => FavoriteKeys.Contains(p.Key))
             .ToList();
 
+        TotalCount = list.Count;
         TotalPages = Math.Max(1, (int)Math.Ceiling(list.Count / (double)PageSize));
         P = Math.Clamp(P, 1, TotalPages);
         Presets = list.Skip((P - 1) * PageSize).Take(PageSize).ToList();
