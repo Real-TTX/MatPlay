@@ -1,4 +1,7 @@
+using System.Security.Claims;
 using MatPlatform;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Hosting;
@@ -60,6 +63,7 @@ public class PlayFactory : WebApplicationFactory<Program>
 
             builder.ConfigureTestServices(services =>
             {
+                services.AddSingleton<IStartupFilter, CallbackHook>();
                 services.PostConfigure<OpenIdConnectOptions>(MatIdentitySignIn.Scheme, options =>
                 {
                     options.Configuration = configuration;
@@ -98,6 +102,42 @@ public class PlayFactory : WebApplicationFactory<Program>
         catch (UnauthorizedAccessException)
         {
         }
+    }
+}
+
+/// <summary>
+/// Was der Rückruf <c>/signin-oidc</c> nach der Anmeldung bei MatIdentity tut, ohne MatIdentity: <c>/test/signin-oidc?sub=&amp;email=&amp;name=&amp;role=</c>
+/// übergibt die Person an <see cref="MatIdentitySignIn.CompleteSignInAsync"/> und leitet weiter wie der Rückruf (ID-Token <c>the.id.token</c>);
+/// <c>/test/pending-link?value=</c> setzt das Cookie der ausstehenden Verknüpfung auf einen beliebigen Wert (gefälscht, abgelaufen).
+/// </summary>
+internal sealed class CallbackHook : IStartupFilter
+{
+    public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
+    {
+        // Nicht app.Map: das verschiebt den Pfad in PathBase, und das Cookie der Verknüpfung gälte nur für /test/signin-oidc.
+        app.Use(async (http, nextMiddleware) =>
+        {
+            if (http.Request.Path == "/test/signin-oidc")
+            {
+                await SignInAsync(http);
+            }
+            else if (http.Request.Path == "/test/pending-link")
+            {
+                http.Response.Cookies.Append(MatIdentityPendingLink.CookieName, http.Request.Query["value"].ToString(), new CookieOptions { Path = "/", HttpOnly = true });
+            }
+            else
+            {
+                await nextMiddleware(http);
+            }
+        });
+        next(app);
+    };
+
+    private static async Task SignInAsync(HttpContext http)
+    {
+        string? Query(string name) => http.Request.Query[name].ToString() is { Length: > 0 } value ? value : null;
+        var person = new MatIdentityPerson(Query("sub") ?? "", Query("email"), Query("name"), null, Query("role"), "the.id.token", new ClaimsPrincipal());
+        http.Response.Redirect(await MatIdentitySignIn.CompleteSignInAsync(http, person, "/"));
     }
 }
 

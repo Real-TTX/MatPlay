@@ -100,8 +100,15 @@ Optional: ohne `MATIDENTITY_AUTHORITY` ändert sich nichts. Mit der Variable:
   (Authorization Code + PKCE).
 - „Anmelden“ führt direkt zu MatIdentity. Das lokale Formular bleibt unter `/account/login?local=1` erreichbar
   (der Weg für den Admin, wenn MatIdentity nicht läuft); ist MatIdentity nicht erreichbar, zeigt die Seite es mit Hinweis.
-- Die Person wird über `sub` einem lokalen Benutzer zugeordnet (Spalte `User.ExternalSubject`); bei der ersten Anmeldung
-  wird ein Benutzer verknüpft, dessen Benutzername ihre E-Mail-Adresse ist, sonst ein neuer angelegt (ohne lokales Passwort).
+- Die Person wird über `sub` einem lokalen Benutzer zugeordnet (Spalte `User.ExternalSubject`); gibt es keinen, wird bei der
+  ersten Anmeldung ein neuer angelegt (ohne lokales Passwort).
+- **Ein vorhandenes Konto wird nur mit Beweis verknüpft.** Den Benutzernamen kann sich bei der Registrierung jeder aussuchen, auch
+  die Adresse eines anderen; deshalb wird ein Konto, dessen Benutzername die E-Mail-Adresse der Person ist, nicht über die Adresse
+  allein verknüpft (und kein zweites angelegt). MatPlay merkt sich die Verknüpfung 10 Minuten (geschütztes Cookie) und zeigt die
+  lokale Anmeldung (`?local=1&link=1`): „Hier gibt es schon ein Konto mit der Adresse …“. Meldet sich genau dieses Konto mit seinem
+  Passwort an, bekommt es den `sub` (die Rolle folgt dem Claim, die Sitzung behält das ID-Token, das Log schreibt die Verknüpfung);
+  meldet sich ein anderes Konto an oder bricht die Person ab, wird nichts verknüpft. Ein passendes Konto ohne Passwort kann das nicht
+  beweisen: dann wird daneben ein neuer Benutzer angelegt, wie bei einem Konto, das schon mit einer anderen Person verknüpft ist.
 - Bringt MatIdentity den Claim `role` mit (`admin` oder `user`), folgt die Rolle ihm bei jeder Anmeldung (der letzte Admin
   wird nicht herabgestuft); ohne Claim verwaltet MatPlay die Rollen selbst wie bisher.
 - „Abmelden“ beendet die Sitzung in MatPlay und bei MatIdentity.

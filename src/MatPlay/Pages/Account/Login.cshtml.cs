@@ -1,3 +1,4 @@
+using System.Globalization;
 using MatPlatform;
 using MatPlay.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -10,8 +11,10 @@ namespace MatPlay.Pages.Account;
 /// Lokale Anmeldung mit Benutzername und Passwort. Mit MatIdentity (MATIDENTITY_AUTHORITY) geht ein Aufruf direkt weiter zu MatIdentity;
 /// das lokale Formular bleibt mit <c>?local=1</c> erreichbar (der Weg für den Admin, wenn MatIdentity nicht läuft).
 /// <c>?signedOut=1</c> (zurück von der Abmeldung) und <c>?ssoError=1</c> (Anmeldung dort fehlgeschlagen) leiten nicht automatisch weiter.
+/// <c>?link=1</c>: MatIdentity hat eine Person angemeldet, deren Adresse ein Konto hier als Benutzernamen hat; das Konto wird erst verknüpft,
+/// wenn es sich hier einmal mit seinem Passwort anmeldet (<see cref="MatIdentityPendingLink"/>), oder die Person bricht ab.
 /// </summary>
-public class LoginModel(AuthService auth, AppConfigService config, CurrentContext current, MatPlatformSettings platform, ILogger<LoginModel> logger) : PageModel
+public class LoginModel(AuthService auth, ExternalSignInService externalUsers, AppConfigService config, CurrentContext current, MatPlatformSettings platform, ILogger<LoginModel> logger) : PageModel
 {
     [BindProperty] public string Username { get; set; } = "";
     [BindProperty] public string Password { get; set; } = "";
@@ -28,6 +31,9 @@ public class LoginModel(AuthService auth, AppConfigService config, CurrentContex
 
     /// <summary><c>?ssoError=1</c>: die Anmeldung bei MatIdentity ist fehlgeschlagen oder MatIdentity ist nicht erreichbar.</summary>
     public bool SsoError { get; private set; }
+
+    /// <summary><c>?link=1</c> mit einer gültigen ausstehenden Verknüpfung: die Person von MatIdentity, deren Adresse ein Konto hier hat.</summary>
+    public MatIdentityPendingLink? PendingLink { get; private set; }
 
     /// <summary>True, wenn die Anmeldung über MatIdentity eingerichtet ist.</summary>
     public bool IdentityEnabled => platform.IdentityEnabled;
@@ -80,7 +86,32 @@ public class LoginModel(AuthService auth, AppConfigService config, CurrentContex
             Error = "Benutzername oder Passwort ist falsch.";
             return Page();
         }
+
+        // Eine ausstehende Verknüpfung gilt nur für genau das Konto, das über die Adresse gepasst hat; sonst wird sie verworfen.
+        if (MatIdentityPendingLink.TakeFor(HttpContext, user.Id.ToString(CultureInfo.InvariantCulture)) is { } link)
+        {
+            var linked = await externalUsers.LinkAfterLocalSignInAsync(
+                user.Id, new ExternalIdentity(link.Subject, link.Email, link.Name, link.PreferredUserName, link.Role), HttpContext.RequestAborted);
+            if (linked.Succeeded)
+            {
+                // Ab jetzt wie eine Anmeldung über MatIdentity: das ID-Token für die Abmeldung dort.
+                await auth.SignInAsync(linked.User!, link.IdToken);
+                logger.LogInformation("\"{DisplayName}\" ({UserId}) ist mit MatIdentity verknüpft", linked.User!.DisplayName, user.Id);
+            }
+            else
+            {
+                logger.LogWarning("Verknüpfung von {UserId} mit MatIdentity abgelehnt: {Error}", user.Id, linked.Error);
+            }
+        }
+
         return LocalRedirect(ResolveReturnUrl());
+    }
+
+    /// <summary>Bricht die ausstehende Verknüpfung ab: nichts wird verknüpft, das lokale Formular bleibt.</summary>
+    public IActionResult OnPostCancelLink()
+    {
+        MatIdentityPendingLink.Clear(HttpContext);
+        return LocalRedirect("/account/login?local=1");
     }
 
     private void ReadFlags()
@@ -88,6 +119,7 @@ public class LoginModel(AuthService auth, AppConfigService config, CurrentContex
         Local = QueryFlag("local");
         SignedOut = QueryFlag("signedOut");
         SsoError = QueryFlag("ssoError");
+        PendingLink = QueryFlag("link") ? MatIdentityPendingLink.Peek(HttpContext) : null;
     }
 
     /// <summary>Ein Schalter in der Query: <c>1</c> oder <c>true</c>.</summary>
