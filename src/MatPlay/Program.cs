@@ -1,5 +1,7 @@
 using System.Text.Json;
+using MatPlatform;
 using MatPlay.Data;
+using MatPlay.Platform;
 using MatPlay.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
@@ -14,8 +16,7 @@ var dataDir = Environment.GetEnvironmentVariable("MATPLAY_DATA")
 var dbDir = Path.Combine(dataDir, "db");
 Directory.CreateDirectory(dbDir);
 
-var appVersion = Environment.GetEnvironmentVariable("APP_VERSION")
-                 ?? $"local-{DateTime.UtcNow:yyyyMMdd}";
+var appVersion = AppVersion.Current;
 
 builder.Services.AddRazorPages(options =>
 {
@@ -35,13 +36,28 @@ builder.Services.AddScoped<CurrentContext>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<GameService>();
 builder.Services.AddScoped<SavedPlayerService>();
+builder.Services.AddScoped<InstanceStatusService>();
+builder.Services.AddScoped<ExternalSignInService>();
 var appConfigService = new AppConfigService(dataDir);
 builder.Services.AddSingleton(appConfigService);
 builder.Services.AddSingleton(new AppInfo(appVersion));
 
+// Plattform-Vertrag (MatDesign docs/PLATFORM.md): MAT_API_KEY und optional MATIDENTITY_*.
+// Das Paket MatPlatform (Kopie in MatPlatform/) stellt die Endpunkte bereit; PlayPlatform beschreibt MatPlay und liefert die Werte.
+var platform = builder.AddMatPlatform<PlayPlatform>(PlayPlatform.Describe);
+
 builder.Services
     .AddAuthentication(SessionAuthDefaults.Scheme)
-    .AddScheme<AuthenticationSchemeOptions, SessionAuthHandler>(SessionAuthDefaults.Scheme, null);
+    .AddScheme<AuthenticationSchemeOptions, SessionAuthHandler>(SessionAuthDefaults.Scheme, null)
+    // Anmeldung über MatIdentity, nur mit MATIDENTITY_AUTHORITY (ohne die Variable ändert sich nichts).
+    // PlayIdentityUsers meldet in der MatPlay-Session an; das Schema der Session ist dafür das "Cookie-Schema".
+    .AddMatIdentitySignIn<PlayIdentityUsers>(platform, o =>
+    {
+        o.CookieScheme = SessionAuthDefaults.Scheme;
+        o.LoginPath = "/account/login";
+        // Abgelehnt (z.B. gelöschtes Konto): zurück zur lokalen Anmeldung mit Hinweis
+        o.AccessDeniedPath = "/account/login?local=1&ssoError=1";
+    });
 
 builder.Services.AddAuthorization(options =>
 {
@@ -55,109 +71,22 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
-
-    // Mini-Schema-Upgrade für bestehende Datenbanken (EnsureCreated legt neue Tabellen nicht nach)
-    db.Database.ExecuteSqlRaw("""
-        CREATE TABLE IF NOT EXISTS "UserFavorite" (
-            "Id" INTEGER NOT NULL CONSTRAINT "PK_UserFavorite" PRIMARY KEY AUTOINCREMENT,
-            "CreateDate" TEXT NOT NULL,
-            "CreateUserId" INTEGER NULL,
-            "UpdateDate" TEXT NOT NULL,
-            "UpdateUserId" INTEGER NULL,
-            "UpdateState" INTEGER NOT NULL,
-            "UserId" INTEGER NOT NULL,
-            "PresetKey" TEXT NOT NULL
-        );
-        CREATE UNIQUE INDEX IF NOT EXISTS "IX_UserFavorite_UserId_PresetKey"
-            ON "UserFavorite" ("UserId", "PresetKey");
-        """);
-    db.Database.ExecuteSqlRaw("""
-        CREATE TABLE IF NOT EXISTS "SavedPlayer" (
-            "Id" INTEGER NOT NULL CONSTRAINT "PK_SavedPlayer" PRIMARY KEY AUTOINCREMENT,
-            "CreateDate" TEXT NOT NULL,
-            "CreateUserId" INTEGER NULL,
-            "UpdateDate" TEXT NOT NULL,
-            "UpdateUserId" INTEGER NULL,
-            "UpdateState" INTEGER NOT NULL,
-            "OwnerUserId" INTEGER NULL,
-            "OwnerSessionId" INTEGER NULL,
-            "Name" TEXT NOT NULL,
-            "LastUsedDate" TEXT NOT NULL
-        );
-        CREATE INDEX IF NOT EXISTS "IX_SavedPlayer_OwnerUserId" ON "SavedPlayer" ("OwnerUserId");
-        CREATE INDEX IF NOT EXISTS "IX_SavedPlayer_OwnerSessionId" ON "SavedPlayer" ("OwnerSessionId");
-        """);
-    // Spalten-Upgrades: ALTER schlägt fehl, wenn die Spalte schon existiert
-    foreach (var alter in new[]
-    {
-        """ALTER TABLE "User" ADD COLUMN "MustChangePassword" INTEGER NOT NULL DEFAULT 0;""",
-        """ALTER TABLE "GamePlayer" ADD COLUMN "SavedPlayerId" INTEGER NULL;""",
-        """ALTER TABLE "SavedPlayer" ADD COLUMN "Code" TEXT NOT NULL DEFAULT '';""",
-        """ALTER TABLE "SavedPlayer" ADD COLUMN "Color" TEXT NOT NULL DEFAULT '';""",
-        """ALTER TABLE "Game" ADD COLUMN "PresetKey" TEXT NULL;""",
-    })
-    {
-        try
-        {
-            db.Database.ExecuteSqlRaw(alter);
-        }
-        catch (Microsoft.Data.Sqlite.SqliteException)
-        {
-            // Spalte existiert bereits
-        }
-    }
-    // Backfill: Kürzel und Farben für bestehende Spielerprofile vergeben
-    if (db.SavedPlayers.Any(p => p.UpdateState != UpdateStates.Deleted && (p.Code == "" || p.Color == "")))
-    {
-        var all = db.SavedPlayers.Where(p => p.UpdateState != UpdateStates.Deleted).ToList();
-        foreach (var group in all.GroupBy(p => (p.OwnerUserId, p.OwnerSessionId)))
-        {
-            var codes = group.Where(p => p.Code != "").Select(p => p.Code).ToList();
-            var colors = group.Where(p => p.Color != "").Select(p => p.Color).ToList();
-            foreach (var player in group)
-            {
-                if (player.Code == "")
-                {
-                    player.Code = SavedPlayerService.GenerateCode(player.Name, codes, appConfigService.Config.PlayerCodeLength);
-                    codes.Add(player.Code);
-                }
-                if (player.Color == "")
-                {
-                    player.Color = SavedPlayerService.NextColor(colors);
-                    colors.Add(player.Color);
-                }
-            }
-        }
-        db.SaveChanges();
-    }
-
-    if (!db.Users.Any())
-    {
-        db.Users.Add(new User
-        {
-            Username = "admin",
-            DisplayName = "Administrator",
-            Role = Roles.Admin,
-            PasswordHash = PasswordHasher.Hash("admin"),
-            MustChangePassword = true,
-        });
-        db.SaveChanges();
-        app.Logger.LogWarning("Admin-Benutzer angelegt: admin / admin – Passwort bitte ändern!");
-    }
+    DbInitializer.Initialize(db, appConfigService.Config.PlayerCodeLength, app.Logger);
 }
 
 app.UseStaticFiles();
 app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Erzwungene Passwort-Änderung (z.B. Erst-Login des Seed-Admins)
+// Erzwungene Passwort-Änderung (z.B. Erst-Login des Seed-Admins); nicht nach einer Anmeldung über MatIdentity
 app.Use(async (ctx, next) =>
 {
     var current = ctx.RequestServices.GetRequiredService<CurrentContext>();
     var path = ctx.Request.Path;
     if (current.User?.MustChangePassword == true
+        && !current.SignedInByIdentity
         && !path.StartsWithSegments("/account/change-password")
         && !path.StartsWithSegments("/account/logout")
         && !path.StartsWithSegments("/api"))
@@ -169,6 +98,9 @@ app.Use(async (ctx, next) =>
 });
 
 app.MapRazorPages();
+
+// ---- Plattform-API: /api (Definition), /api/health, /api/state, /api/configure, /api/actions/{id} ----
+app.MapMatPlatform();
 
 // ---- Play-API (Zugriff über Share-Token = Link-Freigabe, auch anonym) ----
 var play = app.MapGroup("/api/play/{token}");

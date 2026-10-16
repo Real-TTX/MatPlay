@@ -16,6 +16,8 @@ public class CurrentContext
     public long? SessionId => Session?.Id;
     public bool IsAuthenticated => User != null;
     public bool IsAdmin => User?.Role == Roles.Admin;
+    /// <summary>True, wenn die Anmeldung über MatIdentity lief (dann gibt es kein lokales Passwort zu ändern).</summary>
+    public bool SignedInByIdentity => User != null && !string.IsNullOrEmpty(Session?.IdentityToken);
 }
 
 public static class SessionAuthDefaults
@@ -46,6 +48,11 @@ public class SessionAuthHandler(
             session = await db.UserSessions.FirstOrDefaultAsync(s =>
                 s.Token == token && s.UpdateState != UpdateStates.Deleted && s.ExpiresDate > DateTime.UtcNow);
         }
+
+        // Die Plattform-API (/api, /api/health, ...) prüft Schlüssel oder Token selbst; Maschinen ohne Cookie
+        // (Docker-HEALTHCHECK, Mattiverse) sollen keine anonymen Sessions anhäufen. Die Spiel-API /api/play bleibt wie sie ist.
+        if (session == null && IsPlatformPath(Request.Path))
+            return AuthenticateResult.NoResult();
 
         if (session == null)
         {
@@ -79,6 +86,9 @@ public class SessionAuthHandler(
         return AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), Scheme.Name));
     }
 
+    private static bool IsPlatformPath(PathString path) =>
+        path.StartsWithSegments("/api") && !path.StartsWithSegments("/api/play");
+
     protected override Task HandleChallengeAsync(AuthenticationProperties properties)
     {
         Response.Redirect("/account/login?returnUrl=" + Uri.EscapeDataString(Request.Path + Request.QueryString));
@@ -111,10 +121,25 @@ public class AuthService(AppDbContext db, CurrentContext current, IHttpContextAc
             u.Username == username && u.UpdateState != UpdateStates.Deleted);
         if (user == null || !PasswordHasher.Verify(password, user.PasswordHash)) return null;
 
+        await SignInAsync(user);
+        return user;
+    }
+
+    /// <summary>
+    /// Meldet <paramref name="user"/> in der aktuellen Session an (Token-Rotation). <paramref name="identityToken"/>: das ID-Token
+    /// von MatIdentity bei einer Anmeldung dort, für die spätere Abmeldung bei MatIdentity.
+    /// </summary>
+    public async Task SignInAsync(User user, string? identityToken = null)
+    {
+        // Im Rückruf von MatIdentity (/signin-oidc) ist die Session noch nicht gelesen: das holt der Session-Handler nach.
+        if (current.Session == null)
+            await http.HttpContext!.AuthenticateAsync(SessionAuthDefaults.Scheme);
+
         var session = current.Session!;
         // Token-Rotation beim Login
         session.Token = Guid.NewGuid().ToString("N");
         session.UserId = user.Id;
+        session.IdentityToken = identityToken;
         session.UpdateDate = DateTime.UtcNow;
         session.UpdateUserId = user.Id;
         session.UpdateState = UpdateStates.Updated;
@@ -123,14 +148,17 @@ public class AuthService(AppDbContext db, CurrentContext current, IHttpContextAc
 
         WriteCookie(session.Token);
         current.User = user;
-        return user;
     }
+
+    /// <summary>Das ID-Token von MatIdentity, wenn die aktuelle Anmeldung über MatIdentity lief, sonst null.</summary>
+    public string? IdentityToken => current.User != null ? current.Session?.IdentityToken : null;
 
     public async Task LogoutAsync()
     {
         var session = current.Session;
         if (session == null) return;
         session.UserId = null;
+        session.IdentityToken = null;
         session.Token = Guid.NewGuid().ToString("N");
         session.UpdateDate = DateTime.UtcNow;
         session.UpdateState = UpdateStates.Updated;

@@ -34,6 +34,8 @@ public class User : BaseEntity
     public string Role { get; set; } = Roles.User;
     /// <summary>Erzwingt die Passwort-Änderung beim nächsten Login (z.B. Seed-Admin).</summary>
     public bool MustChangePassword { get; set; }
+    /// <summary>Claim <c>sub</c> von MatIdentity, wenn sich der Benutzer dort anmeldet (sonst null).</summary>
+    public string? ExternalSubject { get; set; }
 }
 
 /// <summary>Serverseitige Session – überlebt Container-Restarts, Token ist das Sicherheitsmerkmal.</summary>
@@ -43,6 +45,8 @@ public class UserSession : BaseEntity
     public long? UserId { get; set; }
     public DateTime LastSeenDate { get; set; } = DateTime.UtcNow;
     public DateTime ExpiresDate { get; set; } = DateTime.UtcNow.AddDays(180);
+    /// <summary>ID-Token von MatIdentity bei einer Anmeldung über MatIdentity (für die Abmeldung dort), sonst null.</summary>
+    public string? IdentityToken { get; set; }
 }
 
 /// <summary>Gespeichertes Spielerprofil eines Benutzers bzw. einer (anonymen) Session.</summary>

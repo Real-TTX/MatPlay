@@ -24,6 +24,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<SavedPlayer>().ToTable("SavedPlayer");
 
         modelBuilder.Entity<User>().HasIndex(u => u.Username).IsUnique();
+        modelBuilder.Entity<User>().HasIndex(u => u.ExternalSubject).IsUnique();
         modelBuilder.Entity<UserSession>().HasIndex(s => s.Token).IsUnique();
         modelBuilder.Entity<Game>().HasIndex(g => g.ShareToken).IsUnique();
         modelBuilder.Entity<GamePlayer>().HasIndex(p => p.GameId);

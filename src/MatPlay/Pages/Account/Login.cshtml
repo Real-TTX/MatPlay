@@ -5,29 +5,52 @@
     ViewData["Title"] = "Anmelden";
 }
 
-@if (Model.Error != null)
+@if (Model.SsoError)
 {
-    <div class="mat-alert mat-alert--danger" role="alert">@Ui.Icon("alert")<span>@Model.Error</span></div>
+    <div class="mat-alert mat-alert--danger" role="alert" id="login-sso-error">@Ui.Icon("alert")<span>Die Anmeldung über MatIdentity hat nicht geklappt oder MatIdentity ist gerade nicht erreichbar. Versuche es erneut oder melde dich mit deinem lokalen Konto an.</span></div>
 }
 
-<form method="post" class="mat-form" novalidate>
-    <input type="hidden" asp-for="ReturnUrl" />
-    <div class="mat-field">
-        <label class="mat-label" for="Username">Benutzername</label>
-        <input asp-for="Username" class="mat-input" required autofocus autocomplete="username" data-msg-required="Bitte gib deinen Benutzernamen ein." />
-        <span class="mat-error" aria-live="polite"></span>
+@if (Model.IdentityEnabled)
+{
+    @if (Model.SignedOut)
+    {
+        <p class="mat-muted" id="login-signed-out">Du bist abgemeldet – hier und bei MatIdentity.</p>
+    }
+    <div class="mat-btn-row" id="login-sso">
+        <a class="mat-btn mat-btn--primary" href="@Model.IdentitySignInUrl">@Ui.Icon("login")<span>Mit MatIdentity anmelden</span></a>
     </div>
-    <div class="mat-field">
-        <label class="mat-label" for="Password">Passwort</label>
-        <input asp-for="Password" type="password" class="mat-input" required autocomplete="current-password" data-msg-required="Bitte gib dein Passwort ein." />
-        <span class="mat-error" aria-live="polite"></span>
-    </div>
-    <div class="mat-btn-row">
-        <button type="submit" class="mat-btn mat-btn--primary">@Ui.Icon("login")<span>Anmelden</span></button>
-        @if (Model.AllowRegistration)
-        {
-            <a class="mat-btn mat-btn--secondary" href="/account/register">Registrieren</a>
-        }
-    </div>
-</form>
+    @if (!Model.ShowLocalForm)
+    {
+        <p class="mat-muted mat-small"><a href="@Model.LocalSignInUrl">Mit lokalem Konto anmelden</a></p>
+    }
+}
+
+@if (Model.ShowLocalForm)
+{
+    @if (Model.Error != null)
+    {
+        <div class="mat-alert mat-alert--danger" role="alert">@Ui.Icon("alert")<span>@Model.Error</span></div>
+    }
+
+    <form method="post" class="mat-form" id="login-form" novalidate>
+        <input type="hidden" asp-for="ReturnUrl" />
+        <div class="mat-field">
+            <label class="mat-label" for="Username">Benutzername</label>
+            <input asp-for="Username" class="mat-input" required autofocus autocomplete="username" data-msg-required="Bitte gib deinen Benutzernamen ein." />
+            <span class="mat-error" aria-live="polite"></span>
+        </div>
+        <div class="mat-field">
+            <label class="mat-label" for="Password">Passwort</label>
+            <input asp-for="Password" type="password" class="mat-input" required autocomplete="current-password" data-msg-required="Bitte gib dein Passwort ein." />
+            <span class="mat-error" aria-live="polite"></span>
+        </div>
+        <div class="mat-btn-row">
+            <button type="submit" class="mat-btn @(Model.IdentityEnabled ? "mat-btn--secondary" : "mat-btn--primary")">@Ui.Icon("login")<span>Anmelden</span></button>
+            @if (Model.AllowRegistration)
+            {
+                <a class="mat-btn mat-btn--secondary" href="/account/register">Registrieren</a>
+            }
+        </div>
+    </form>
+}
 <p class="mat-muted mat-small mp-auth-hint">Ohne Konto? Du kannst Spiele auch als Gast erstellen und teilen.</p>
