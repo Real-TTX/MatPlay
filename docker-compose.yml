@@ -9,6 +9,13 @@ services:
     container_name: matplay
     ports:
       - "4664:8080"
+    # Mat-Plattform (optional, siehe README „Plattform-API“ / „Anmeldung über MatIdentity“), nichts davon ist Pflicht:
+    # environment:
+    #   MAT_API_KEY: ""                    # Schlüssel für /api/* (X-Api-Key; Mattiverse setzt ihn)
+    #   MATIDENTITY_AUTHORITY: ""          # https://id.example.com: Anmeldung über MatIdentity
+    #   MATIDENTITY_CLIENT_ID: "matplay"
+    #   MATIDENTITY_CLIENT_SECRET: ""
+    #   MATIDENTITY_INTERNAL_URL: ""       # http://matidentity:2300 innerhalb von Docker
     volumes:
       - matplay-data:/data
     restart: unless-stopped

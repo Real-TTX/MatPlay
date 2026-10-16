@@ -45,6 +45,68 @@ docker compose -f docker-compose.dev.yml up -d --build
 Alle Daten (SQLite-DB, JSON-Configs) liegen im Docker-Volume unter `/data` –
 Sessions und Spielstände überleben Container-Restarts.
 
+### Einstellungen (Umgebungsvariablen)
+
+Keine davon ist Pflicht; ohne die `MAT*`-Variablen verhält sich MatPlay wie bisher.
+
+| Variable | Standard | Bedeutung |
+|---|---|---|
+| `MATPLAY_DATA` | `/data` (Container), lokal `appdata/` | Datenverzeichnis: `db/`, `config/`, `keys/` |
+| `APP_VERSION` | `local-<datum>` | Angezeigte Version (setzt der CI-Build) |
+| `MAT_API_KEY` | – | Schlüssel für den geschützten Teil der [Plattform-API](#plattform-api) (Header `X-Api-Key`). Nicht gesetzt = dort nur Tokens von MatIdentity |
+| `MATIDENTITY_AUTHORITY` | – | Öffentliche Adresse von [MatIdentity](#anmeldung-über-matidentity) (`https://id.example.com`). Gesetzt = Anmeldung über MatIdentity |
+| `MATIDENTITY_CLIENT_ID` | `matplay` | Der Client von MatPlay in MatIdentity (auch die Audience der API-Tokens) |
+| `MATIDENTITY_CLIENT_SECRET` | – | Sein Secret |
+| `MATIDENTITY_INTERNAL_URL` | – | Wo MatPlay selbst MatIdentity erreicht, wenn das von der öffentlichen Adresse abweicht (in Docker z. B. `http://matidentity:2300`): Discovery, Schlüssel und Token-Abrufe gehen dorthin, Browser und erwarteter Issuer bleiben öffentlich |
+
+### Plattform-API
+
+MatPlay erfüllt den Plattform-Vertrag der Mat-Apps (MatDesign `docs/PLATFORM.md`), über das gemeinsame Paket
+**MatPlatform** (Kopie unter `src/MatPlay/MatPlatform/`, nicht von Hand ändern; neu kopieren mit
+`node tools/matplatform-copy.js <MatPlay>/src/MatPlay` im MatDesign-Repo). Beschrieben wird MatPlay in
+`Platform/PlayPlatform.cs`; so zeigt Mattiverse (oder jede andere App) MatPlay an, ohne es vorher zu kennen.
+
+| Endpunkt | Zweck | Zugriff |
+|---|---|---|
+| `GET /api` | die Definition: Seiten, Kacheln, Einstellungen, Aktionen, Rollen | anonym |
+| `GET /api/health` | `ok` / `degraded` / `down` (Datenbank, aktiver Admin); 503 nur bei `down` – der Docker-`HEALTHCHECK` ruft das auf | anonym |
+| `GET /api/state`, `GET /api/state/{key}` | die Werte der Kacheln | Schlüssel oder Token |
+| `GET`/`PUT /api/configure` | die wenigen Einstellungen | Schlüssel oder Token |
+| `POST /api/actions/{id}` | eine Aktion ausführen | Schlüssel oder Token |
+
+- **Kacheln:** Spiele, laufende Spiele, Spiele der letzten 30 Tage, Spielerprofile, Benutzerkonten,
+  meistgespieltes Spiel, letzter Spieleabend (letzte Änderung an einem Spiel).
+- **Einstellungen:** Selbst-Registrierung erlauben, Länge der automatischen Kürzel (1–4) – dieselben Werte wie
+  unter Administration → Einstellungen. Änderungen landen mit dem Aufrufer im Log.
+- **Aktionen:** Benutzer verwalten und Alle Einstellungen (Links), Abgelaufene Sitzungen löschen.
+- **Rollen:** `admin` (Administrator), `user` (Benutzer).
+
+*Schlüssel* ist der Header `X-Api-Key` mit dem Wert von `MAT_API_KEY` (nicht gesetzt = aus); *Token* ist ein
+Bearer-Token von MatIdentity für die Audience `MATIDENTITY_CLIENT_ID`. Texte folgen `Accept-Language` (`de`, `en`).
+Die Spiel-API unter `/api/play/{token}` (Share-Links) bleibt davon unberührt.
+
+```bash
+curl http://localhost:4664/api
+curl -H "X-Api-Key: $MAT_API_KEY" http://localhost:4664/api/state
+```
+
+### Anmeldung über MatIdentity
+
+Optional: ohne `MATIDENTITY_AUTHORITY` ändert sich nichts. Mit der Variable:
+
+- In MatIdentity einen Client für MatPlay anlegen (Mattiverse erledigt das beim Installieren) mit der
+  Weiterleitungsadresse `https://<matplay>/signin-oidc` und der Abmelde-Adresse `https://<matplay>/signout-callback-oidc`;
+  Id und Secret als `MATIDENTITY_CLIENT_ID` / `MATIDENTITY_CLIENT_SECRET` übergeben. Angemeldet wird mit OpenID Connect
+  (Authorization Code + PKCE).
+- „Anmelden“ führt direkt zu MatIdentity. Das lokale Formular bleibt unter `/account/login?local=1` erreichbar
+  (der Weg für den Admin, wenn MatIdentity nicht läuft); ist MatIdentity nicht erreichbar, zeigt die Seite es mit Hinweis.
+- Die Person wird über `sub` einem lokalen Benutzer zugeordnet (Spalte `User.ExternalSubject`); bei der ersten Anmeldung
+  wird ein Benutzer verknüpft, dessen Benutzername ihre E-Mail-Adresse ist, sonst ein neuer angelegt (ohne lokales Passwort).
+- Bringt MatIdentity den Claim `role` mit (`admin` oder `user`), folgt die Rolle ihm bei jeder Anmeldung (der letzte Admin
+  wird nicht herabgestuft); ohne Claim verwaltet MatPlay die Rollen selbst wie bisher.
+- „Abmelden“ beendet die Sitzung in MatPlay und bei MatIdentity.
+- Spielen als Gast und die Share-Links funktionieren weiterhin ohne Anmeldung.
+
 ## Live-Reload / Testen
 
 Einfach den Container neu bauen und den Stack neu deployen:
@@ -73,7 +135,9 @@ Inline-Styles/-Skripte, keine `confirm`/`alert`/`prompt` (stattdessen `data-conf
 |---|---|
 | Backend | C# / ASP.NET Core Razor Pages (.NET 10) |
 | Datenbank | SQLite (EF Core) – Logik; JSON – Configs |
-| Auth | Lokale Anmeldung, DB-Sessions (Token) |
+| Auth | Lokale Anmeldung, DB-Sessions (Token); optional MatIdentity (OpenID Connect) |
+| Plattform | MatPlatform 1.0.0 (Kopie aus MatDesign): `/api`, `/api/health`, `/api/state`, `/api/configure`, `/api/actions` |
+| Tests | xunit + WebApplicationFactory (`dotnet test MatPlay.slnx`), laufen in GitHub Actions vor dem Docker-Build |
 | Deployment | Docker, docker-compose (dev/release), GitHub Actions → GHCR |
 
 ## Versionierung
@@ -91,8 +155,10 @@ Version wird unten links im Menü angezeigt.
 
 ```
 src/MatPlay/
-├── Data/            # EF-Core-Entities + DbContext (PascalCase-Tabellen, Audit-Felder)
-├── Services/        # Auth/Session, GameService, Modul-Registry, JSON-Config
+├── Data/            # EF-Core-Entities + DbContext (PascalCase-Tabellen, Audit-Felder), Schema-Upgrade (DbInitializer)
+├── Services/        # Auth/Session, GameService, Modul-Registry, JSON-Config, Kennzahlen, MatIdentity-Benutzer
+├── Platform/        # Plattform-Vertrag: PlayPlatform (Definition + Werte), PlayIdentityUsers
+├── MatPlatform/     # MatPlatform-Paket (Kopie aus MatDesign, nicht von Hand ändern)
 ├── Pages/           # Razor Pages (Games, Play, Account, Admin)
 │   └── Shared/Controls/   # Wiederverwendbare Controls: Toolbar, Pagination, Tabs
 └── wwwroot/
@@ -100,6 +166,9 @@ src/MatPlay/
     ├── css/app.css  # nur App-Spezifisches (Spielkarten, Zettel), Präfix mp-, nur --mat-* Tokens
     └── js/          # Play-Module, Seiten-Skripte, PWA (Manifest, Service Worker, Icons)
 ```
+
+Tests liegen unter `tests/MatPlay.Tests/` (Plattform-API, JSON-Pins der Definition in `Golden/` – neu schreiben nur
+absichtlich mit `MATPLAY_WRITE_GOLDEN=1` –, Anmeldung mit und ohne MatIdentity, Schema-Upgrade): `dotnet test MatPlay.slnx`.
 
 ### Neues Spielmodul hinzufügen
 
