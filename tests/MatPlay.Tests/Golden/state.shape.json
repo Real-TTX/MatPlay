@@ -1,0 +1,26 @@
+{
+  "time": "<string>",
+  "values": {
+    "games": {
+      "value": "<number>"
+    },
+    "runningGames": {
+      "value": "<number>"
+    },
+    "gamesLast30Days": {
+      "value": "<number>"
+    },
+    "players": {
+      "value": "<number>"
+    },
+    "accounts": {
+      "value": "<number>"
+    },
+    "topGame": {
+      "value": "<null>"
+    },
+    "lastGameNight": {
+      "value": "<null>"
+    }
+  }
+}

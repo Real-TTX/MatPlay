@@ -1,0 +1,6 @@
+{
+  "values": {
+    "allowRegistration": "<bool>",
+    "playerCodeLength": "<number>"
+  }
+}

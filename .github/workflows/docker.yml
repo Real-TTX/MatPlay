@@ -12,7 +12,23 @@ env:
   MINOR: "0"
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Tests
+        run: dotnet test MatPlay.slnx --configuration Release --logger "GitHubActions;summary-include-passed=false"
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read

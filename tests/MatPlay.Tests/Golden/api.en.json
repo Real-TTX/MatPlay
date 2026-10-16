@@ -1,0 +1,166 @@
+{
+  "contract": 1,
+  "app": {
+    "id": "matplay",
+    "name": "MatPlay",
+    "description": "Keeping score on game night",
+    "version": "<version>",
+    "icon": "/icons/favicon.svg",
+    "accent": "#00819b",
+    "home": "/"
+  },
+  "auth": {
+    "apiKey": true
+  },
+  "pages": [
+    {
+      "id": "overview",
+      "label": "Overview",
+      "icon": "dashboard",
+      "sections": [
+        {
+          "kind": "tiles",
+          "items": [
+            "games",
+            "runningGames",
+            "gamesLast30Days",
+            "players",
+            "accounts",
+            "topGame",
+            "lastGameNight"
+          ]
+        },
+        {
+          "kind": "actions",
+          "items": [
+            "openUsers",
+            "openSettings",
+            "cleanupSessions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "label": "Settings",
+      "icon": "settings",
+      "sections": [
+        {
+          "kind": "form",
+          "items": [
+            "allowRegistration"
+          ],
+          "label": "Users"
+        },
+        {
+          "kind": "form",
+          "items": [
+            "playerCodeLength"
+          ],
+          "label": "Player profiles"
+        }
+      ]
+    }
+  ],
+  "state": [
+    {
+      "key": "games",
+      "label": "Games",
+      "widget": "number",
+      "icon": "gamepad"
+    },
+    {
+      "key": "runningGames",
+      "label": "Games in progress",
+      "widget": "number",
+      "icon": "play"
+    },
+    {
+      "key": "gamesLast30Days",
+      "label": "Games in the last 30 days",
+      "widget": "number",
+      "icon": "calendar"
+    },
+    {
+      "key": "players",
+      "label": "Player profiles",
+      "widget": "number",
+      "icon": "users"
+    },
+    {
+      "key": "accounts",
+      "label": "Accounts",
+      "widget": "number",
+      "icon": "user"
+    },
+    {
+      "key": "topGame",
+      "label": "Most played game",
+      "widget": "text",
+      "icon": "star"
+    },
+    {
+      "key": "lastGameNight",
+      "label": "Last game night",
+      "widget": "time",
+      "icon": "clock"
+    }
+  ],
+  "configure": [
+    {
+      "key": "allowRegistration",
+      "label": "Allow sign-up",
+      "type": "bool",
+      "hint": "Off: only administrators create accounts. Playing as a guest always works."
+    },
+    {
+      "key": "playerCodeLength",
+      "label": "Length of the automatic player codes",
+      "type": "number",
+      "required": true,
+      "min": 1,
+      "max": 4,
+      "hint": "For new players; existing codes stay."
+    }
+  ],
+  "actions": [
+    {
+      "id": "openUsers",
+      "label": "Manage users",
+      "icon": "users",
+      "kind": "link",
+      "url": "/admin/users"
+    },
+    {
+      "id": "openSettings",
+      "label": "All settings",
+      "icon": "settings",
+      "kind": "link",
+      "url": "/admin/settings"
+    },
+    {
+      "id": "cleanupSessions",
+      "label": "Remove expired sessions",
+      "icon": "broom",
+      "kind": "post"
+    }
+  ],
+  "provides": [],
+  "consumes": [],
+  "roles": [
+    {
+      "key": "admin",
+      "label": "Administrator"
+    },
+    {
+      "key": "user",
+      "label": "User"
+    }
+  ],
+  "endpoints": [
+    "/api/health",
+    "/api/state",
+    "/api/configure",
+    "/api/actions"
+  ]
+}
