@@ -143,7 +143,7 @@ Inline-Styles/-Skripte, keine `confirm`/`alert`/`prompt` (stattdessen `data-conf
 | Backend | C# / ASP.NET Core Razor Pages (.NET 10) |
 | Datenbank | SQLite (EF Core) – Logik; JSON – Configs |
 | Auth | Lokale Anmeldung, DB-Sessions (Token); optional MatIdentity (OpenID Connect) |
-| Plattform | MatPlatform 1.0.0 (Kopie aus MatDesign): `/api`, `/api/health`, `/api/state`, `/api/configure`, `/api/actions` |
+| Plattform | MatPlatform 1.2.0 (Kopie aus MatDesign): `/api`, `/api/health`, `/api/state`, `/api/configure`, `/api/actions` |
 | Tests | xunit + WebApplicationFactory (`dotnet test MatPlay.slnx`), laufen in GitHub Actions vor dem Docker-Build |
 | Deployment | Docker, docker-compose (dev/release), GitHub Actions → GHCR |
 
