@@ -60,6 +60,8 @@ public static class DbInitializer
             // Anmeldung über MatIdentity: sub des Benutzers, ID-Token der Session (für die Abmeldung dort)
             """ALTER TABLE "User" ADD COLUMN "ExternalSubject" TEXT NULL;""",
             """ALTER TABLE "UserSession" ADD COLUMN "IdentityToken" TEXT NULL;""",
+            // Back-Channel-Logout (MatPlatform 1.4.0): sid der Session bei MatIdentity
+            """ALTER TABLE "UserSession" ADD COLUMN "IdentitySessionId" TEXT NULL;""",
         })
         {
             try
@@ -73,6 +75,7 @@ public static class DbInitializer
         }
         db.Database.ExecuteSqlRaw("""
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_User_ExternalSubject" ON "User" ("ExternalSubject");
+            CREATE INDEX IF NOT EXISTS "IX_UserSession_IdentitySessionId" ON "UserSession" ("IdentitySessionId");
             """);
 
         // Backfill: Kürzel und Farben für bestehende Spielerprofile vergeben

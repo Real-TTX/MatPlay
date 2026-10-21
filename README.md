@@ -95,7 +95,8 @@ curl -H "X-Api-Key: $MAT_API_KEY" http://localhost:4664/api/state
 Optional: ohne `MATIDENTITY_AUTHORITY` ändert sich nichts. Mit der Variable:
 
 - In MatIdentity einen Client für MatPlay anlegen (Mattiverse erledigt das beim Installieren) mit der
-  Weiterleitungsadresse `https://<matplay>/signin-oidc` und der Abmelde-Adresse `https://<matplay>/signout-callback-oidc`;
+  Weiterleitungsadresse `https://<matplay>/signin-oidc`, der Abmelde-Adresse `https://<matplay>/signout-callback-oidc` und der
+  Back-Channel-Logout-Adresse `https://<matplay>/signout-backchannel`;
   Id und Secret als `MATIDENTITY_CLIENT_ID` / `MATIDENTITY_CLIENT_SECRET` übergeben. Angemeldet wird mit OpenID Connect
   (Authorization Code + PKCE).
 - „Anmelden“ führt direkt zu MatIdentity. Das lokale Formular bleibt unter `/account/login?local=1` erreichbar
@@ -112,6 +113,10 @@ Optional: ohne `MATIDENTITY_AUTHORITY` ändert sich nichts. Mit der Variable:
 - Bringt MatIdentity den Claim `role` mit (`admin` oder `user`), folgt die Rolle ihm bei jeder Anmeldung (der letzte Admin
   wird nicht herabgestuft); ohne Claim verwaltet MatPlay die Rollen selbst wie bisher.
 - „Abmelden“ beendet die Sitzung in MatPlay und bei MatIdentity.
+- **Abmelden bei MatIdentity meldet auch hier ab** (Back-Channel-Logout, MatPlatform 1.4.0): MatIdentity schickt ein signiertes
+  Logout-Token an `POST /signout-backchannel`. Die Sitzung merkt sich bei der Anmeldung die Session bei MatIdentity
+  (`sid`, Spalte `UserSession.IdentitySessionId`); das Token beendet die Sitzungen mit diesem `sid`, ohne `sid` alle Sitzungen des
+  Benutzers mit diesem `sub`. Der nächste Aufruf des Browsers ist dann ein Gast. Ohne `MATIDENTITY_AUTHORITY` gibt es die Adresse nicht (`404`).
 - Spielen als Gast und die Share-Links funktionieren weiterhin ohne Anmeldung.
 
 ## Live-Reload / Testen
@@ -143,7 +148,7 @@ Inline-Styles/-Skripte, keine `confirm`/`alert`/`prompt` (stattdessen `data-conf
 | Backend | C# / ASP.NET Core Razor Pages (.NET 10) |
 | Datenbank | SQLite (EF Core) – Logik; JSON – Configs |
 | Auth | Lokale Anmeldung, DB-Sessions (Token); optional MatIdentity (OpenID Connect) |
-| Plattform | MatPlatform 1.2.0 (Kopie aus MatDesign): `/api`, `/api/health`, `/api/state`, `/api/configure`, `/api/actions` |
+| Plattform | MatPlatform 1.4.0 (Kopie aus MatDesign): `/api`, `/api/health`, `/api/state`, `/api/configure`, `/api/actions`, `/signout-backchannel` |
 | Tests | xunit + WebApplicationFactory (`dotnet test MatPlay.slnx`), laufen in GitHub Actions vor dem Docker-Build |
 | Deployment | Docker, docker-compose (dev/release), GitHub Actions → GHCR |
 

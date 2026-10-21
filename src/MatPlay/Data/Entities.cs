@@ -47,6 +47,11 @@ public class UserSession : BaseEntity
     public DateTime ExpiresDate { get; set; } = DateTime.UtcNow.AddDays(180);
     /// <summary>ID-Token von MatIdentity bei einer Anmeldung über MatIdentity (für die Abmeldung dort), sonst null.</summary>
     public string? IdentityToken { get; set; }
+    /// <summary>
+    /// Die Session bei MatIdentity (Claim <c>sid</c>) bei einer Anmeldung über MatIdentity, sonst null: meldet MatIdentity sie ab
+    /// (Back-Channel-Logout), endet die Anmeldung hier.
+    /// </summary>
+    public string? IdentitySessionId { get; set; }
 }
 
 /// <summary>Gespeichertes Spielerprofil eines Benutzers bzw. einer (anonymen) Session.</summary>

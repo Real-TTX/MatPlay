@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
 using MatPlatform;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
 
 // Die Factories geben ihre Einstellungen über Umgebungsvariablen an Program (Program liest sie, bevor der Host gebaut wird),
 // deshalb laufen die Testklassen nacheinander.
@@ -25,6 +27,10 @@ namespace MatPlay.Tests;
 public class PlayFactory : WebApplicationFactory<Program>
 {
     public const string ApiKey = "test-key-0123456789";
+
+    /// <summary>Der Schlüssel von "MatIdentity" (in der festen OpenID-Konfiguration): damit signieren die Tests Logout-Tokens.</summary>
+    public static readonly SigningCredentials IdentityCredentials =
+        new(new RsaSecurityKey(RSA.Create(2048)) { KeyId = "test-key" }, SecurityAlgorithms.RsaSha256);
 
     private readonly string _data = Path.Combine(Path.GetTempPath(), "matplay-tests-" + Guid.NewGuid().ToString("N"));
     private readonly string? _authority;
@@ -60,6 +66,7 @@ public class PlayFactory : WebApplicationFactory<Program>
                 TokenEndpoint = _authority + "/connect/token",
                 EndSessionEndpoint = _authority + "/connect/logout",
             };
+            configuration.SigningKeys.Add(IdentityCredentials.Key);
 
             builder.ConfigureTestServices(services =>
             {
@@ -107,7 +114,7 @@ public class PlayFactory : WebApplicationFactory<Program>
 
 /// <summary>
 /// Was der Rückruf <c>/signin-oidc</c> nach der Anmeldung bei MatIdentity tut, ohne MatIdentity: <c>/test/signin-oidc?sub=&amp;email=&amp;name=&amp;role=</c>
-/// übergibt die Person an <see cref="MatIdentitySignIn.CompleteSignInAsync"/> und leitet weiter wie der Rückruf (ID-Token <c>the.id.token</c>);
+/// (und <c>&amp;sid=</c>, die Session bei MatIdentity) übergibt die Person an <see cref="MatIdentitySignIn.CompleteSignInAsync"/> und leitet weiter wie der Rückruf (ID-Token <c>the.id.token</c>);
 /// <c>/test/pending-link?value=</c> setzt das Cookie der ausstehenden Verknüpfung auf einen beliebigen Wert (gefälscht, abgelaufen).
 /// </summary>
 internal sealed class CallbackHook : IStartupFilter
@@ -136,7 +143,10 @@ internal sealed class CallbackHook : IStartupFilter
     private static async Task SignInAsync(HttpContext http)
     {
         string? Query(string name) => http.Request.Query[name].ToString() is { Length: > 0 } value ? value : null;
-        var person = new MatIdentityPerson(Query("sub") ?? "", Query("email"), Query("name"), null, Query("role"), "the.id.token", new ClaimsPrincipal());
+        var person = new MatIdentityPerson(Query("sub") ?? "", Query("email"), Query("name"), null, Query("role"), "the.id.token", new ClaimsPrincipal())
+        {
+            SessionId = Query("sid"),
+        };
         http.Response.Redirect(await MatIdentitySignIn.CompleteSignInAsync(http, person, "/"));
     }
 }

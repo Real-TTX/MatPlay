@@ -95,7 +95,7 @@ public class LoginModel(AuthService auth, ExternalSignInService externalUsers, A
             if (linked.Succeeded)
             {
                 // Ab jetzt wie eine Anmeldung über MatIdentity: das ID-Token für die Abmeldung dort.
-                await auth.SignInAsync(linked.User!, link.IdToken);
+                await auth.SignInAsync(linked.User!, link.IdToken, link.SessionId);
                 logger.LogInformation("\"{DisplayName}\" ({UserId}) ist mit MatIdentity verknüpft", linked.User!.DisplayName, user.Id);
             }
             else

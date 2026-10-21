@@ -50,7 +50,8 @@ public class SessionAuthHandler(
         }
 
         // Die Plattform-API (/api, /api/health, ...) prüft Schlüssel oder Token selbst; Maschinen ohne Cookie
-        // (Docker-HEALTHCHECK, Mattiverse) sollen keine anonymen Sessions anhäufen. Die Spiel-API /api/play bleibt wie sie ist.
+        // (Docker-HEALTHCHECK, Mattiverse) sollen keine anonymen Sessions anhäufen, ebenso der Back-Channel-Logout von MatIdentity
+        // (/signout-backchannel). Die Spiel-API /api/play bleibt wie sie ist.
         if (session == null && IsPlatformPath(Request.Path))
             return AuthenticateResult.NoResult();
 
@@ -87,7 +88,8 @@ public class SessionAuthHandler(
     }
 
     private static bool IsPlatformPath(PathString path) =>
-        path.StartsWithSegments("/api") && !path.StartsWithSegments("/api/play");
+        (path.StartsWithSegments("/api") && !path.StartsWithSegments("/api/play"))
+        || path.StartsWithSegments(MatPlatform.MatIdentitySignIn.BackchannelLogoutPath);
 
     protected override Task HandleChallengeAsync(AuthenticationProperties properties)
     {
@@ -127,9 +129,10 @@ public class AuthService(AppDbContext db, CurrentContext current, IHttpContextAc
 
     /// <summary>
     /// Meldet <paramref name="user"/> in der aktuellen Session an (Token-Rotation). <paramref name="identityToken"/>: das ID-Token
-    /// von MatIdentity bei einer Anmeldung dort, für die spätere Abmeldung bei MatIdentity.
+    /// von MatIdentity bei einer Anmeldung dort, für die spätere Abmeldung bei MatIdentity; <paramref name="identitySessionId"/>: die Session
+    /// dort (Claim <c>sid</c>), für den Back-Channel-Logout (<see cref="EndIdentitySessionsAsync"/>).
     /// </summary>
-    public async Task SignInAsync(User user, string? identityToken = null)
+    public async Task SignInAsync(User user, string? identityToken = null, string? identitySessionId = null)
     {
         // Im Rückruf von MatIdentity (/signin-oidc) ist die Session noch nicht gelesen: das holt der Session-Handler nach.
         if (current.Session == null)
@@ -140,6 +143,7 @@ public class AuthService(AppDbContext db, CurrentContext current, IHttpContextAc
         session.Token = Guid.NewGuid().ToString("N");
         session.UserId = user.Id;
         session.IdentityToken = identityToken;
+        session.IdentitySessionId = identitySessionId;
         session.UpdateDate = DateTime.UtcNow;
         session.UpdateUserId = user.Id;
         session.UpdateState = UpdateStates.Updated;
@@ -159,12 +163,50 @@ public class AuthService(AppDbContext db, CurrentContext current, IHttpContextAc
         if (session == null) return;
         session.UserId = null;
         session.IdentityToken = null;
+        session.IdentitySessionId = null;
         session.Token = Guid.NewGuid().ToString("N");
         session.UpdateDate = DateTime.UtcNow;
         session.UpdateState = UpdateStates.Updated;
         await db.SaveChangesAsync();
         WriteCookie(session.Token);
         current.User = null;
+    }
+
+    /// <summary>
+    /// Back-Channel-Logout von MatIdentity: meldet die Sessions ab, die mit der Session <paramref name="identitySessionId"/> (Claim <c>sid</c>)
+    /// angemeldet wurden, oder, nur mit <paramref name="subject"/>, alle Sessions des damit verknüpften Benutzers (abgemeldet überall).
+    /// Die Sessions bleiben als anonyme Sessions bestehen (wie nach <see cref="LogoutAsync"/>); der nächste Request des Browsers ist abgemeldet.
+    /// Unbekannte <c>sub</c>/<c>sid</c>: nichts zu tun. Liefert die Anzahl der beendeten Sessions.
+    /// </summary>
+    public async Task<int> EndIdentitySessionsAsync(string? subject, string? identitySessionId, CancellationToken ct = default)
+    {
+        IQueryable<UserSession> sessions = db.UserSessions.Where(s => s.UserId != null && s.UpdateState != UpdateStates.Deleted);
+        if (!string.IsNullOrEmpty(identitySessionId))
+        {
+            sessions = sessions.Where(s => s.IdentitySessionId == identitySessionId);
+        }
+        else if (!string.IsNullOrEmpty(subject))
+        {
+            var userId = await db.Users.Where(u => u.ExternalSubject == subject).Select(u => (long?)u.Id).FirstOrDefaultAsync(ct);
+            if (userId is null) return 0;
+            sessions = sessions.Where(s => s.UserId == userId);
+        }
+        else
+        {
+            return 0;
+        }
+
+        var ended = await sessions.ToListAsync(ct);
+        foreach (var session in ended)
+        {
+            session.UserId = null;
+            session.IdentityToken = null;
+            session.IdentitySessionId = null;
+            session.UpdateDate = DateTime.UtcNow;
+            session.UpdateState = UpdateStates.Updated;
+        }
+        await db.SaveChangesAsync(ct);
+        return ended.Count;
     }
 
     private void WriteCookie(string token)

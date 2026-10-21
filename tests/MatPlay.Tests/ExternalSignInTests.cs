@@ -201,7 +201,7 @@ public sealed class ExternalSignInTests : IAsyncLifetime
 public sealed class SchemaUpgradeTests
 {
     [Fact]
-    public async Task An_old_database_gets_the_external_subject_and_the_identity_token()
+    public async Task An_old_database_gets_the_external_subject_the_identity_token_and_the_identity_session()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -212,15 +212,18 @@ public sealed class SchemaUpgradeTests
         await db.Database.ExecuteSqlRawAsync("DROP INDEX \"IX_User_ExternalSubject\";");
         await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"User\" DROP COLUMN \"ExternalSubject\";");
         await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"UserSession\" DROP COLUMN \"IdentityToken\";");
+        await db.Database.ExecuteSqlRawAsync("DROP INDEX IF EXISTS \"IX_UserSession_IdentitySessionId\";");
+        await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"UserSession\" DROP COLUMN \"IdentitySessionId\";");
 
         DbInitializer.Upgrade(db, 2);
         DbInitializer.Upgrade(db, 2);
 
         db.Users.Add(new User { Username = "x", DisplayName = "X", ExternalSubject = "sub" });
-        db.UserSessions.Add(new UserSession { IdentityToken = "token" });
+        db.UserSessions.Add(new UserSession { IdentityToken = "token", IdentitySessionId = "sid" });
         await db.SaveChangesAsync();
         Assert.Equal("sub", (await db.Users.AsNoTracking().SingleAsync()).ExternalSubject);
         Assert.Equal("token", (await db.UserSessions.AsNoTracking().SingleAsync()).IdentityToken);
+        Assert.Equal("sid", (await db.UserSessions.AsNoTracking().SingleAsync()).IdentitySessionId);
 
         // Der Index hält sub eindeutig.
         db.Users.Add(new User { Username = "y", DisplayName = "Y", ExternalSubject = "sub" });

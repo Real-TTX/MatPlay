@@ -61,7 +61,7 @@ public sealed class PendingLinkTests(IdentityFactory site) : IClassFixture<Ident
     {
         var account = await AddUserAsync("link@example.com", "link-pw");
         var browser = site.Browser();
-        Assert.Equal(LinkPage, (await browser.GetAsync("/test/signin-oidc?sub=sub-link&email=Link@Example.com&role=admin")).Headers.Location!.OriginalString);
+        Assert.Equal(LinkPage, (await browser.GetAsync("/test/signin-oidc?sub=sub-link&email=Link@Example.com&role=admin&sid=sid-link")).Headers.Location!.OriginalString);
 
         var signedIn = await SignInAsync(browser, "link@example.com", "link-pw");
 
@@ -73,7 +73,7 @@ public sealed class PendingLinkTests(IdentityFactory site) : IClassFixture<Ident
         await using (var scope = site.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            Assert.True(await db.UserSessions.AnyAsync(s => s.UserId == account.Id && s.IdentityToken == "the.id.token"));
+            Assert.True(await db.UserSessions.AnyAsync(s => s.UserId == account.Id && s.IdentityToken == "the.id.token" && s.IdentitySessionId == "sid-link"));
         }
 
         // Die ausstehende Verknüpfung ist verbraucht; die nächste Anmeldung über MatIdentity findet das Konto über sub.
