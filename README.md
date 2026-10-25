@@ -4,6 +4,8 @@ Der Helfer für den Spieleabend: Punkte zählen für Brett- und Kartenspiele –
 auf einem Handy oder per geteiltem Link auf mehreren Geräten gleichzeitig.
 Als PWA installierbar, mit Wake-Lock („Display bleibt an") am Spieltisch.
 
+![Ein laufendes Qwixx-Spiel: digitaler Zettel mit Farbreihen, Schlössern, Fehlwürfen und Punktestand](docs/images/qwixx.png)
+
 ## Features
 
 - 🎯 **Punktezähler** – generisch konfigurierbar (Startpunkte, Schrittweite, Ziel, Runden)
@@ -26,6 +28,50 @@ Als PWA installierbar, mit Wake-Lock („Display bleibt an") am Spieltisch.
 - 👤 **Anonym spielbar** – Spiele erstellen ohne Konto; lokale Anmeldung mit Rollen (Admin, User, Anonym)
 - 📱 **PWA** – installierbar, Offline-Shell, Screen Wake Lock (Android & iOS ≥ 16.4)
 - 🌗 **Mat-Design** – nutzt das MatUi-Toolkit der Mat-Apps (System / Hell / Dunkel, flach, barrierearm)
+
+## Screenshots
+
+### Startseite
+
+![Die Startseite mit den aktiven Spielen und den zuletzt gespielten Spielarten](docs/images/home.png)
+
+Laufende Spiele auf einen Blick und ein schneller Einstieg in die nächste Runde mit den zuletzt gespielten Spielarten.
+
+### Spielkatalog und neues Spiel
+
+| Spielkatalog | Neues Spiel |
+|---|---|
+| ![Der Spielkatalog mit Suche, Favoriten-Sternen und Presets wie Punktezähler, Phase 10 und Qwixx](docs/images/catalog.png) | ![Das Formular „Neues Spiel“ mit Preset, angetippten gespeicherten Spielern und Qwixx-Variante](docs/images/create.png) |
+
+Spielart suchen, als Favorit markieren und starten; gespeicherte Spieler werden beim neuen Spiel einfach angetippt.
+
+### Wizard mit automatischer Wertung
+
+![Ein Wizard-Spiel mit Ansage und Stichen pro Spieler, Führendem und Rundentabelle](docs/images/wizard.png)
+
+Ansage und Stiche eintragen – die Punkte rechnet MatPlay selbst, die Rundentabelle zeigt jede Runde mit Plus und Minus.
+
+### Am Handy
+
+| Qwixx | Kniffel |
+|---|---|
+| ![Der Qwixx-Zettel auf dem Handy](docs/images/mobile-qwixx.png) | ![Der Kniffel-Block auf dem Handy mit Bonus im oberen Teil](docs/images/mobile-kniffel.png) |
+
+Gespielt wird meist am Handy: ein Tab pro Spieler, große Felder, der Bonus wird automatisch gerechnet.
+
+### Meine Spiele und Spieler
+
+| Meine Spiele | Spieler |
+|---|---|
+| ![Die Liste „Meine Spiele“ mit Modul, Status und letzter Aktivität](docs/images/games.png) | ![Die Spielerprofile mit Kürzel, Farbe und Anzahl Spiele](docs/images/players.png) |
+
+Laufende und beendete Spiele mit Suche, Filter und Sortierung; Mitspieler mit Kürzel, Farbe und Spiel-Historie.
+
+### Dunkles Design
+
+![Ein Skyjo-Spiel mit Rundentabelle im dunklen Design](docs/images/dark.png)
+
+Das MatUi-Toolkit bringt System, Hell und Dunkel mit – hier ein Skyjo-Punktezähler mit Runden.
 
 ## Schnellstart
 
